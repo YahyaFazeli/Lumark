@@ -157,3 +157,9 @@ We follow the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0
 ## Code of Conduct
 
 This project is governed by the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
+
+---
+
+## License
+
+By contributing to Lumark, you agree that your contributions will be licensed under the project's [MIT License](LICENSE).

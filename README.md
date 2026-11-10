@@ -1,8 +1,13 @@
+<p align="center">
+  <img src="docs/assets/logo.svg" alt="Lumark Logo" width="96" height="96">
+</p>
+
 # Lumark
 
 Fast, cross-platform desktop Markdown reader.
 
 [![Latest Release](https://img.shields.io/github/v/release/yahya-mehrabani/Lumark)](https://github.com/yahya-mehrabani/Lumark/releases/latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Linux Build](https://github.com/yahya-mehrabani/Lumark/actions/workflows/linux-build.yml/badge.svg)](https://github.com/yahya-mehrabani/Lumark/actions/workflows/linux-build.yml)
 [![macOS Build](https://github.com/yahya-mehrabani/Lumark/actions/workflows/macos-build.yml/badge.svg)](https://github.com/yahya-mehrabani/Lumark/actions/workflows/macos-build.yml)
 [![Windows Build](https://github.com/yahya-mehrabani/Lumark/actions/workflows/windows-build.yml/badge.svg)](https://github.com/yahya-mehrabani/Lumark/actions/workflows/windows-build.yml)
@@ -37,13 +42,14 @@ Grab the latest installer or portable package from the [Releases page](https://g
 | **Linux** | x64 (AMD64) | `lumark_*_amd64.deb` | Debian / Ubuntu package |
 | **Linux** | x64 (AMD64) | `Lumark_*_linux_amd64.AppImage` | Standalone portable executable |
 | **Linux** | x64 (AMD64) | `lumark-*.x86_64.rpm` | Fedora / RHEL package |
+| **Linux** | x64 (AMD64) | `Lumark_*_linux_amd64.tar.gz` | Portable standalone binary archive |
 
 ## Installation
 
 ### Windows
 1. Download `Lumark_*_windows_amd64_setup.exe` from [Releases](https://github.com/yahya-mehrabani/Lumark/releases/latest).
 2. Run the installer and follow the setup wizard.
-3. **Unsigned Build Notice:** Release builds are currently self-signed. If Windows SmartScreen displays *"Windows protected your PC"*, click **More info**, then select **Run anyway**.
+3. **Unsigned Build Notice:** Release builds are currently unsigned. If Windows SmartScreen displays *"Windows protected your PC"*, click **More info**, then select **Run anyway**.
 
 ### macOS
 1. Download `Lumark_*_macos_universal.dmg` from [Releases](https://github.com/yahya-mehrabani/Lumark/releases/latest).
@@ -168,7 +174,7 @@ To report a security vulnerability, please submit a private advisory through [Gi
 
 ## License
 
-*(License choice pending maintainer selection — see [CONTRIBUTING.md](CONTRIBUTING.md))*.
+This project is licensed under the [MIT License](LICENSE) © 2026 Yahya Mehrabani.
 
 ## Acknowledgments
 
