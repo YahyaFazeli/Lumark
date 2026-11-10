@@ -36,23 +36,23 @@ Grab the latest installer or portable package from the [Releases page](https://g
 
 | Platform | Architecture | File Pattern | Notes |
 |---|---|---|---|
-| **Windows** | x64 (AMD64) | `Lumark_*_windows_amd64_setup.exe` | NSIS installer |
-| **macOS** | Universal (Apple Silicon & Intel) | `Lumark_*_macos_universal.dmg` | Disk image installer |
-| **macOS** | Universal (Apple Silicon & Intel) | `Lumark_*_macos_universal.zip` | Portable application archive |
+| **Windows** | x64 (AMD64) | `lumark_*_windows_amd64_setup.exe` | NSIS installer |
+| **macOS** | Universal (Apple Silicon & Intel) | `lumark_*_macos_universal.dmg` | Disk image installer |
+| **macOS** | Universal (Apple Silicon & Intel) | `lumark_*_macos_universal.zip` | Portable application archive |
 | **Linux** | x64 (AMD64) | `lumark_*_amd64.deb` | Debian / Ubuntu package |
-| **Linux** | x64 (AMD64) | `Lumark_*_linux_amd64.AppImage` | Standalone portable executable |
+| **Linux** | x64 (AMD64) | `lumark_*_linux_amd64.AppImage` | Standalone portable executable |
 | **Linux** | x64 (AMD64) | `lumark-*.x86_64.rpm` | Fedora / RHEL package |
-| **Linux** | x64 (AMD64) | `Lumark_*_linux_amd64.tar.gz` | Portable standalone binary archive |
+| **Linux** | x64 (AMD64) | `lumark_*_linux_amd64.tar.gz` | Portable standalone binary archive |
 
 ## Installation
 
 ### Windows
-1. Download `Lumark_*_windows_amd64_setup.exe` from [Releases](https://github.com/yahya-mehrabani/Lumark/releases/latest).
+1. Download `lumark_*_windows_amd64_setup.exe` from [Releases](https://github.com/yahya-mehrabani/Lumark/releases/latest).
 2. Run the installer and follow the setup wizard.
 3. **Unsigned Build Notice:** Release builds are currently unsigned. If Windows SmartScreen displays *"Windows protected your PC"*, click **More info**, then select **Run anyway**.
 
 ### macOS
-1. Download `Lumark_*_macos_universal.dmg` from [Releases](https://github.com/yahya-mehrabani/Lumark/releases/latest).
+1. Download `lumark_*_macos_universal.dmg` from [Releases](https://github.com/yahya-mehrabani/Lumark/releases/latest).
 2. Open the `.dmg` file and drag `Lumark.app` to your `/Applications` folder.
 3. **Unsigned Build Notice:** Release builds are currently unsigned without an Apple Developer ID. If macOS Gatekeeper blocks opening:
    - In Finder, open `/Applications`, **right-click** `Lumark.app`, select **Open**, and click **Open** in the confirmation dialog; or
@@ -65,8 +65,8 @@ Grab the latest installer or portable package from the [Releases page](https://g
   ```
 - **AppImage (Standalone):**
   ```bash
-  chmod +x Lumark_*_linux_amd64.AppImage
-  ./Lumark_*_linux_amd64.AppImage
+  chmod +x lumark_*_linux_amd64.AppImage
+  ./lumark_*_linux_amd64.AppImage
   ```
   *(Note: Ubuntu 24.04+ requires `libfuse2t64` to launch AppImages: `sudo apt install libfuse2t64`)*
 - **Fedora / RHEL:**

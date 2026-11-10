@@ -55,13 +55,13 @@ Every production release builds and publishes the following standardized assets:
 
 | Platform | Architecture | Package Format | Release Asset Name | Description |
 | :--- | :--- | :--- | :--- | :--- |
-| **Windows** | x64 (AMD64) | NSIS Installer | `Lumark_<version>_windows_amd64_setup.exe` | Standard Windows installer with file associations |
-| **macOS** | Universal (arm64 + x64) | Apple Disk Image | `Lumark_<version>_macos_universal.dmg` | Branded drag-and-drop DMG installer |
-| **macOS** | Universal (arm64 + x64) | Zip Archive | `Lumark_<version>_macos_universal.zip` | Portable zipped `.app` bundle |
-| **Linux** | x86_64 / amd64 | AppImage | `Lumark_<version>_linux_amd64.AppImage` | Standalone executable (`chmod +x` & run) |
+| **Windows** | x64 (AMD64) | NSIS Installer | `lumark_<version>_windows_amd64_setup.exe` | Standard Windows installer with file associations |
+| **macOS** | Universal (arm64 + x64) | Apple Disk Image | `lumark_<version>_macos_universal.dmg` | Branded drag-and-drop DMG installer |
+| **macOS** | Universal (arm64 + x64) | Zip Archive | `lumark_<version>_macos_universal.zip` | Portable zipped `.app` bundle |
+| **Linux** | x86_64 / amd64 | AppImage | `lumark_<version>_linux_amd64.AppImage` | Standalone executable (`chmod +x` & run) |
 | **Linux** | x86_64 / amd64 | Debian Package | `lumark_<version>-1_amd64.deb` | Debian / Ubuntu installer (`apt install`) |
 | **Linux** | x86_64 / amd64 | RPM Package | `lumark-<version>-1.x86_64.rpm` | Fedora / RHEL installer (`dnf install`) |
-| **Linux** | x86_64 / amd64 | Tarball | `Lumark_<version>_linux_amd64.tar.gz` | Portable standalone binary archive |
+| **Linux** | x86_64 / amd64 | Tarball | `lumark_<version>_linux_amd64.tar.gz` | Portable standalone binary archive |
 | **All** | All | Checksums | `SHA256SUMS.txt` | SHA-256 checksums for all release assets |
 
 > **Deferred Architectures:** Windows ARM64 and Linux ARM64 packages are not yet available and are planned for future releases.

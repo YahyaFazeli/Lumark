@@ -108,6 +108,8 @@ jobs:
         with:
           name: lumark-appimage
           path: |
+            build/bin/lumark*.AppImage
             build/bin/Lumark*.AppImage
+            build/bin/lumark*.tar.gz
             build/bin/Lumark*.tar.gz
           if-no-files-found: warn

@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Release asset filenames are now lowercase (e.g. lumark_<version>_windows_amd64_setup.exe).
+
 ## [0.1.0] - 2026-10-26
 
 ### Added

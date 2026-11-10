@@ -20,6 +20,7 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.vars.outputs.version }}
+      base_name: ${{ steps.vars.outputs.base_name }}
       windows_installer: ${{ steps.vars.outputs.windows_installer }}
       macos_dmg: ${{ steps.vars.outputs.macos_dmg }}
       macos_zip: ${{ steps.vars.outputs.macos_zip }}
@@ -42,16 +43,20 @@ jobs:
           VERSION="${RAW_VER#v}"
           echo "Computed release version: ${VERSION}"
 
-          # Target asset names conforming to Lumark_<version>_<os>_<arch>[_setup].<ext>
-          WIN_INSTALLER="Lumark_${VERSION}_windows_amd64_setup.exe"
-          MAC_DMG="Lumark_${VERSION}_macos_universal.dmg"
-          MAC_ZIP="Lumark_${VERSION}_macos_universal.zip"
-          LINUX_APPIMAGE="Lumark_${VERSION}_linux_amd64.AppImage"
-          LINUX_TAR="Lumark_${VERSION}_linux_amd64.tar.gz"
-          LINUX_DEB="lumark_${VERSION}-1_amd64.deb"
+          # Single source of truth: lowercase base name conforming to lumark_<version>
+          BASE_NAME="lumark_${VERSION}"
+
+          # Target asset names deriving from BASE_NAME
+          WIN_INSTALLER="${BASE_NAME}_windows_amd64_setup.exe"
+          MAC_DMG="${BASE_NAME}_macos_universal.dmg"
+          MAC_ZIP="${BASE_NAME}_macos_universal.zip"
+          LINUX_APPIMAGE="${BASE_NAME}_linux_amd64.AppImage"
+          LINUX_TAR="${BASE_NAME}_linux_amd64.tar.gz"
+          LINUX_DEB="${BASE_NAME}-1_amd64.deb"
           LINUX_RPM="lumark-${VERSION}-1.x86_64.rpm"
 
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "base_name=${BASE_NAME}" >> "$GITHUB_OUTPUT"
           echo "windows_installer=${WIN_INSTALLER}" >> "$GITHUB_OUTPUT"
           echo "macos_dmg=${MAC_DMG}" >> "$GITHUB_OUTPUT"
           echo "macos_zip=${MAC_ZIP}" >> "$GITHUB_OUTPUT"
@@ -417,7 +422,8 @@ jobs:
         working-directory: release-assets
         run: |
           rm -f SHA256SUMS.txt
-          sha256sum Lumark_* lumark_* lumark-* > SHA256SUMS.txt
+          shopt -s nullglob
+          sha256sum lumark_* lumark-* > SHA256SUMS.txt
           sha256sum -c SHA256SUMS.txt
           cat SHA256SUMS.txt
 
@@ -518,6 +524,56 @@ jobs:
 
           **Full Changelog**: See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/v${{ needs.prepare.outputs.version }}/CHANGELOG.md) for detailed release notes.
           EOF
+
+      - name: Validate Release Asset Filenames & Completeness
+        working-directory: release-assets
+        run: |
+          echo "=== CI Guard: Validating Asset Filenames & Completeness ==="
+
+          # 1. Fail if any asset name contains uppercase letters (except .AppImage extension and SHA256SUMS.txt)
+          for file in *; do
+            [ ! -f "$file" ] && continue
+            fname="$(basename "$file")"
+            if [ "$fname" = "SHA256SUMS.txt" ]; then
+              continue
+            fi
+            name_check="${fname%.AppImage}"
+            if [[ "$name_check" =~ [A-Z] ]]; then
+              echo "ERROR: Release asset '${fname}' contains forbidden uppercase characters!" >&2
+              exit 1
+            fi
+          done
+          echo "✓ All release asset filenames verified lowercase (preserving .AppImage extension)."
+
+          # 2. Fail if the filenames in the release body table don't exist among the built assets
+          RELEASE_BODY="${GITHUB_WORKSPACE}/release-body.md"
+          if [ ! -f "$RELEASE_BODY" ]; then
+            echo "ERROR: release-body.md not found at ${RELEASE_BODY}!" >&2
+            exit 1
+          fi
+
+          TABLE_FILES=$(grep -E '^\|.*\|.*\|.*\| `.*` \|' "$RELEASE_BODY" | sed -E 's/.*`([^`]+)`.*/\1/')
+          if [ -z "$TABLE_FILES" ]; then
+            echo "ERROR: No asset filenames found in release body table!" >&2
+            exit 1
+          fi
+
+          COUNT=0
+          while IFS= read -r expected_file; do
+            [ -z "$expected_file" ] && continue
+            if [ ! -f "$expected_file" ]; then
+              echo "ERROR: Asset '${expected_file}' declared in release body table does not exist in release-assets!" >&2
+              exit 1
+            fi
+            echo "  ✓ Found matching built asset: ${expected_file}"
+            COUNT=$((COUNT + 1))
+          done <<< "$TABLE_FILES"
+
+          if [ "$COUNT" -lt 7 ]; then
+            echo "ERROR: Expected at least 7 assets in release body table, but only found ${COUNT}!" >&2
+            exit 1
+          fi
+          echo "✓ Verified all ${COUNT} release body table assets exist among built assets."
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2

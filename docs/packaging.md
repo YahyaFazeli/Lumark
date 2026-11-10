@@ -80,20 +80,20 @@ spctl --assess --type execute --verbose=4 "bin/Lumark.app"
 
 #### Step 4.1: Generate Branded DMG
 ```bash
-# Generate canonical or versioned DMG (e.g. Lumark_0.1.0_macos_universal.dmg)
-./packaging/macos/create-dmg.sh bin "Lumark" bin "Lumark_${VERSION:-0.1.0}_macos_universal.dmg"
+# Generate canonical or versioned DMG (e.g. lumark_0.1.0_macos_universal.dmg)
+./packaging/macos/create-dmg.sh bin "Lumark" bin "lumark_${VERSION:-0.1.0}_macos_universal.dmg"
 ```
 
 #### Step 4.2: Sign the DMG Artifact
 ```bash
 codesign --force --sign "Developer ID Application: Your Name (TEAM_ID)" \
   --timestamp \
-  "bin/Lumark_${VERSION:-0.1.0}_macos_universal.dmg"
+  "bin/lumark_${VERSION:-0.1.0}_macos_universal.dmg"
 ```
 
 #### Step 4.3: Verify DMG Signature
 ```bash
-codesign --verify --strict --verbose=4 "bin/Lumark_${VERSION:-0.1.0}_macos_universal.dmg"
+codesign --verify --strict --verbose=4 "bin/lumark_${VERSION:-0.1.0}_macos_universal.dmg"
 ```
 
 ### 5. Apple Notarization with `xcrun notarytool`
@@ -108,7 +108,7 @@ xcrun notarytool store-credentials "AC_PASSWORD" \
 
 #### Step 5.2: Submit DMG for Notarization
 ```bash
-xcrun notarytool submit "bin/Lumark_${VERSION:-0.1.0}_macos_universal.dmg" \
+xcrun notarytool submit "bin/lumark_${VERSION:-0.1.0}_macos_universal.dmg" \
   --keychain-profile "AC_PASSWORD" \
   --wait
 ```
@@ -122,8 +122,8 @@ xcrun notarytool log <SUBMISSION_ID> --keychain-profile "AC_PASSWORD"
 
 #### Step 6.1: Staple Notarization Ticket to DMG
 ```bash
-xcrun stapler staple "bin/Lumark_${VERSION:-0.1.0}_macos_universal.dmg"
-xcrun stapler validate "bin/Lumark_${VERSION:-0.1.0}_macos_universal.dmg"
+xcrun stapler staple "bin/lumark_${VERSION:-0.1.0}_macos_universal.dmg"
+xcrun stapler validate "bin/lumark_${VERSION:-0.1.0}_macos_universal.dmg"
 ```
 
 #### Step 6.2: Staple Notarization Ticket to App Bundle
@@ -134,7 +134,7 @@ xcrun stapler validate "bin/Lumark.app"
 
 #### Step 6.3: Validate Gatekeeper Assessment
 ```bash
-spctl --assess --type open --context context:primary-signature --verbose=4 "bin/Lumark_${VERSION:-0.1.0}_macos_universal.dmg"
+spctl --assess --type open --context context:primary-signature --verbose=4 "bin/lumark_${VERSION:-0.1.0}_macos_universal.dmg"
 ```
 
 ### 7. Unsigned Development Builds & Gatekeeper Quarantine Handling
@@ -210,7 +210,7 @@ dpkg-deb -c build/bin/lumark_0.1.0-1_amd64.deb
 ```bash
 ./packaging/linux/build-appimage.sh
 ```
-Stages `build/staging/Lumark.AppDir` containing executable `AppRun`, root `.desktop`, icons, and binary, and generates `build/bin/Lumark_${VERSION}_linux_amd64.AppImage` (with `build/bin/Lumark.AppImage` symlink) using `appimagetool` or `linuxdeploy`.
+Stages `build/staging/Lumark.AppDir` containing executable `AppRun`, root `.desktop`, icons, and binary, and generates `build/bin/lumark_${VERSION}_linux_amd64.AppImage` (with `build/bin/lumark.AppImage` symlink) using `appimagetool` or `linuxdeploy`.
 
 #### Step 4.4: Run Linux Package Verification Suite
 ```bash
@@ -223,15 +223,15 @@ Verifies control metadata, binary location (`/usr/bin/lumark`), permissions, Fre
 ## Release Asset Naming Standard
 
 All release assets published to GitHub Releases strictly adhere to the following convention:
-`Lumark_<version>_<os>_<arch>[_setup].<ext>` with lowercase `<os>` and `<arch>` using Go standard values:
+`lumark_<version>_<os>_<arch>[_setup].<ext>` with lowercase base name, `<os>`, and `<arch>` using Go standard values:
 
 | Target Platform | Package Format | Release Asset Name |
 | :--- | :--- | :--- |
-| **Windows x64** | NSIS Installer | `Lumark_<version>_windows_amd64_setup.exe` |
-| **macOS Universal** | Apple Disk Image | `Lumark_<version>_macos_universal.dmg` |
-| **macOS Universal** | Zip Archive | `Lumark_<version>_macos_universal.zip` |
-| **Linux x86_64** | FreeDesktop AppImage | `Lumark_<version>_linux_amd64.AppImage` |
-| **Linux x86_64** | Standalone Tarball | `Lumark_<version>_linux_amd64.tar.gz` |
+| **Windows x64** | NSIS Installer | `lumark_<version>_windows_amd64_setup.exe` |
+| **macOS Universal** | Apple Disk Image | `lumark_<version>_macos_universal.dmg` |
+| **macOS Universal** | Zip Archive | `lumark_<version>_macos_universal.zip` |
+| **Linux x86_64** | FreeDesktop AppImage | `lumark_<version>_linux_amd64.AppImage` |
+| **Linux x86_64** | Standalone Tarball | `lumark_<version>_linux_amd64.tar.gz` |
 | **Linux x86_64** | Debian Package | `lumark_<version>-1_amd64.deb` |
 | **Linux x86_64** | RPM Package | `lumark-<version>-1.x86_64.rpm` |
 | **All Platforms** | SHA-256 Checksums | `SHA256SUMS.txt` |

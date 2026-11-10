@@ -11,7 +11,7 @@
 # Usage:
 #   ./packaging/macos/create-dmg.sh [BIN_DIR] [APP_NAME] [OUTPUT_DIR] [OUTPUT_NAME]
 # Example:
-#   ./packaging/macos/create-dmg.sh bin "Lumark" bin "Lumark_0.1.0_macos_universal.dmg"
+#   ./packaging/macos/create-dmg.sh bin "Lumark" bin "lumark_0.1.1_macos_universal.dmg"
 # ==============================================================================
 
 set -euo pipefail
