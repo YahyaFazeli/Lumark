@@ -37,8 +37,8 @@ overrides:
   # RPM packages for Fedora / RHEL / AlmaLinux / Rocky Linux
   rpm:
     depends:
-      - gtk4
-      - webkitgtk6.0
+      - (gtk4 or gtk3)
+      - (webkitgtk6.0 or webkit2gtk4.1)
 
   # Arch Linux packages
   archlinux:

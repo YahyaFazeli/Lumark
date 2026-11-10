@@ -323,6 +323,10 @@ jobs:
         run: |
           task darwin:package:universal APP_NAME=Lumark
 
+      - name: Verify Universal Binary Architecture
+        run: |
+          lipo -archs "bin/Lumark.app/Contents/MacOS/Lumark"
+
       # =========================================================================
       # OPTIONAL CODE SIGNING & NOTARIZATION: macOS App Bundle
       # To enable macOS codesigning and notarization, configure these secrets:
@@ -420,6 +424,16 @@ jobs:
       - name: Generate Release Notes Body
         run: |
           cat << 'EOF' > release-body.md
+          ## Highlights
+
+          - **Fast, Offline Markdown Reader:** Clean, distraction-free desktop reading for CommonMark and GitHub Flavored Markdown (tables, task lists, strikethrough, autolinks) with 100% offline local rendering and zero telemetry.
+          - **Rich Technical Content:** Syntax-highlighted code blocks with Shiki, offline LaTeX math formula rendering with KaTeX (bundled WOFF2 fonts), and Mermaid diagram visualization.
+          - **First-Class Bidirectional (RTL/LTR) Support:** Automatic per-block direction detection (`dir="auto"`) for Persian, Arabic, and Hebrew, with scoped CSS direction precedence and non-prose LTR isolation for code, math, and diagrams.
+          - **Deep Desktop Integration:** Local single-instance window coordinator, `.md`/`.markdown` file associations, drag-and-drop file opening, CLI argument forwarding, and multi-document tabs with session restoration.
+          - **Reading Experience:** In-document text search with match cycling, interactive Table of Contents (TOC) sidebar, Light/Dark/System themes, zoom controls (50%–300%), and debounced live file watcher.
+
+          ---
+
           ## Installation Guide
 
           Download the package for your operating system and architecture:
@@ -434,14 +448,75 @@ jobs:
           | **Linux** | x86_64 / amd64 | RPM (Fedora/RHEL) | `${{ needs.prepare.outputs.linux_rpm }}` | RPM package (`sudo dnf install ./...rpm`) |
           | **Linux** | x86_64 / amd64 | Tarball | `${{ needs.prepare.outputs.linux_tar }}` | Portable standalone binary archive |
 
-          ### Checksum Verification
-          To verify integrity after downloading, download `SHA256SUMS.txt` into the same directory and run:
-          ```bash
-          sha256sum -c SHA256SUMS.txt --ignore-missing
-          ```
+          > **Not yet available:** Windows ARM64, Linux ARM64 (planned for future releases).
 
           ---
 
+          ## Checksum Verification
+
+          Download `SHA256SUMS.txt` into the same directory as your downloaded package and verify its integrity:
+
+          - **Linux:**
+            ```bash
+            sha256sum -c SHA256SUMS.txt --ignore-missing
+            ```
+
+          - **macOS:**
+            ```bash
+            shasum -a 256 <filename>
+            ```
+            *(compare the resulting hash against the matching line in `SHA256SUMS.txt`)*
+
+          - **Windows (PowerShell):**
+            ```powershell
+            Get-FileHash <filename> -Algorithm SHA256
+            ```
+            *(compare the `Hash` value against the matching line in `SHA256SUMS.txt`)*
+
+          ---
+
+          ## Unsigned Builds Notice
+
+          Lumark is an independent open-source project and release binaries are not digitally signed with commercial Microsoft Authenticode or Apple Developer ID certificates yet. Code signing and notarization will be introduced in an upcoming release.
+
+          Depending on your operating system, you may see security prompts during installation:
+
+          - **Windows SmartScreen:**
+            - Windows Defender SmartScreen may display: *"Windows protected your PC / Microsoft Defender SmartScreen prevented an unrecognized app from starting"*.
+            - Click **More info**, then click **Run anyway** to proceed with installation.
+
+          - **macOS Gatekeeper:**
+            - On first launch, macOS may report that Lumark cannot be opened because the developer cannot be verified.
+            - In Finder, open the `/Applications` folder, **right-click** (or Control-click) `Lumark.app`, select **Open**, and click **Open** in the confirmation dialog.
+            - If macOS shows *"'Lumark' is damaged and can’t be opened. You should move it to the Trash"*, clear the quarantine attribute via Terminal:
+              ```bash
+              xattr -dr com.apple.quarantine /Applications/Lumark.app
+              ```
+
+          ---
+
+          ## Linux Notes
+
+          - **Ubuntu 24.04+ (FUSE 2 Requirement for AppImage):**
+            Ubuntu 24.04 and newer distributions default to FUSE 3 without backward-compatible FUSE 2 libraries. If the AppImage does not launch, install the FUSE 2 compatibility library:
+            ```bash
+            sudo apt install libfuse2t64
+            ```
+            *(On Ubuntu 22.04 or older, use `sudo apt install libfuse2`)*
+
+          - **Runtime Dependencies (.deb & .rpm):**
+            Packages support both modern GTK4 / WebKitGTK 6.0 and GTK3 / WebKit2GTK 4.1 runtime stacks. Package managers will automatically resolve dependencies:
+            ```bash
+            # Debian / Ubuntu / Linux Mint
+            sudo apt install ./${{ needs.prepare.outputs.linux_deb }}
+
+            # Fedora / RHEL / Rocky Linux
+            sudo dnf install ./${{ needs.prepare.outputs.linux_rpm }}
+            ```
+
+          ---
+
+          **Full Changelog**: See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/v${{ needs.prepare.outputs.version }}/CHANGELOG.md) for detailed release notes.
           EOF
 
       - name: Publish GitHub Release
@@ -449,7 +524,7 @@ jobs:
         with:
           files: release-assets/*
           body_path: release-body.md
-          generate_release_notes: true
+          generate_release_notes: false
           append_body: false
           draft: false
           prerelease: false
