@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security Vulnerability Reporting
+    url: https://github.com/yahya-mehrabani/Lumark/security/advisories/new
+    about: Privately disclose security vulnerabilities to the maintainers.
+  - name: Documentation & Specifications
+    url: https://github.com/yahya-mehrabani/Lumark/tree/main/docs
+    about: Read the architectural specifications, threat model, and platform matrices.

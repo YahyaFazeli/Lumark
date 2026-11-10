@@ -1,0 +1,111 @@
+name: Bug Report
+description: Report a reproducible bug, defect, or unexpected rendering behavior in Lumark
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting an issue! Please check existing issues before submitting.
+        If you are reporting a security vulnerability, please submit a private advisory via [GitHub Security](https://github.com/yahya-mehrabani/Lumark/security/advisories/new) instead.
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System & Architecture
+      description: Select your operating system and architecture.
+      options:
+        - Windows 10/11 (x64)
+        - macOS (Apple Silicon arm64)
+        - macOS (Intel x64)
+        - Ubuntu 24.04 LTS (x64)
+        - Debian / Ubuntu-based (x64)
+        - Fedora / RHEL-based (x64)
+        - Arch Linux (x64)
+        - Other (specify in description)
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Lumark Version
+      description: What version of Lumark are you running? (e.g., v0.1.0 or commit SHA)
+      placeholder: v0.1.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: package-type
+    attributes:
+      label: Package / Installation Type
+      description: How did you install or run Lumark?
+      options:
+        - Windows NSIS Installer (.exe)
+        - macOS DMG (.dmg)
+        - Linux Debian Package (.deb)
+        - Linux AppImage (.AppImage)
+        - Linux RPM (.rpm)
+        - Built from source
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the Bug
+      description: A clear and concise description of what happened.
+      placeholder: When I open a Markdown document containing...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Exact steps to reproduce the behavior.
+      value: |
+        1. Open Lumark
+        2. Open the document '...'
+        3. Scroll to / click on '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: A clear and concise description of what you expected to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually occurred (including any error messages or unexpected formatting).
+    validations:
+      required: true
+
+  - type: textarea
+    id: sample-markdown
+    attributes:
+      label: Sample Markdown Content
+      description: |
+        Paste a minimal Markdown snippet reproducing the issue, or drag and drop a sample `.md` file into this field.
+      placeholder: |
+        ```markdown
+        # Reproducible Sample
+        Text here...
+        ```
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context, Screenshots, or Logs
+      description: Add any relevant screenshots, terminal output, or diagnostic context here.
+    validations:
+      required: false

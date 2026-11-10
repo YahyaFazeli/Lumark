@@ -1,7 +1,7 @@
 # Security and Privacy Specification
 
 **Document Status:** Canonical Security Baseline<br>
-**Authority:** Derived from [PRD.md](../PRD.md) Section 8 (Security and Privacy Requirements)<br>
+**Authority:** Derived from [PRD.md](PRD.md) Section 8 (Security and Privacy Requirements)<br>
 **Canonical Path:** `docs/security.md`<br>
 **Related Decisions:** [`ADR-0003: HTML & CSS Sanitization Policy`](decisions/ADR-0003-sanitization-css-policy.md)<br>
 **Related Epics:** `EPIC-001`, `EPIC-004`

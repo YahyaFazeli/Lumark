@@ -1,7 +1,7 @@
 # Packaging and Operating System Integration (Canonical Redirect)
 
 **Document Status:** Canonical Baseline Specification<br>
-**Authority:** Derived from [PRD.md](../PRD.md) Section 11 (Packaging and Distribution)<br>
+**Authority:** Derived from [PRD.md](PRD.md) Section 11 (Packaging and Distribution)<br>
 **Canonical Path:** `docs/packaging.md`<br>
 
 The authoritative, detailed Platform Support & Packaging specification is maintained at:

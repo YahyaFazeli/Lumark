@@ -1,7 +1,7 @@
 # Testing Strategy (Canonical Redirect)
 
 **Document Status:** Canonical Baseline Specification<br>
-**Authority:** Derived from [PRD.md](../PRD.md) Section 13 (Testing Strategy)<br>
+**Authority:** Derived from [PRD.md](PRD.md) Section 13 (Testing Strategy)<br>
 **Canonical Path:** `docs/testing.md`<br>
 
 The authoritative, detailed Test Strategy specification is maintained at:

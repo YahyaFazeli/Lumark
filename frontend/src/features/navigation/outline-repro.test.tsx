@@ -74,7 +74,11 @@ describe('Outline Jump Reproduction with Real AGENTS.md and PRD.md', () => {
   });
 
   it('verifies all TOC entries in PRD.md resolve to rendered heading elements and trigger scrollTo', () => {
-    const prdPath = path.resolve(__dirname, '../../../../PRD.md');
+    const prdCandidates = [
+      path.resolve(__dirname, '../../../../docs/PRD.md'),
+      path.resolve(__dirname, '../../../../PRD.md'),
+    ];
+    const prdPath = prdCandidates.find((p) => fs.existsSync(p)) || prdCandidates[0];
     const content = fs.readFileSync(prdPath, 'utf-8');
 
     const expectedToc = extractHeadingsFromMarkdown(content);

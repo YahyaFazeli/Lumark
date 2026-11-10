@@ -20,7 +20,7 @@ from pathlib import Path
 def find_repo_root() -> Path:
     current = Path(__file__).resolve().parent
     while current != current.parent:
-        if (current / "PRD.md").exists():
+        if (current / "docs" / "PRD.md").exists() or (current / "PRD.md").exists():
             return current
         current = current.parent
     return Path.cwd()

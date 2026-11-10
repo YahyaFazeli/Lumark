@@ -11,7 +11,7 @@ When entering the repository for the first time, follow this reading order:
 1. [AGENTS.md](../../AGENTS.md) — Operating rules, tooling policy, and platform evidence discipline.
 2. [docs/implementation/CURRENT-STATE.md](CURRENT-STATE.md) — Current active work item, blockers, and exact next action.
 3. [docs/implementation/IMPLEMENTATION-PROTOCOL.md](IMPLEMENTATION-PROTOCOL.md) — 12-step execution lifecycle.
-4. [PRD.md](../../PRD.md) — Authoritative product requirements.
+4. [PRD.md](../PRD.md) — Authoritative product requirements.
 5. Active Story in [docs/stories/](../stories/) and Epic in [docs/epics/](../epics/).
 
 ---

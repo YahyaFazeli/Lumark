@@ -1,7 +1,7 @@
 # Markdown Compatibility Contract
 
 **Document Status:** Canonical Baseline Specification<br>
-**Authority:** Derived from [PRD.md](../PRD.md) Section 7 (Markdown Compatibility Contract) and Section 6.2<br>
+**Authority:** Derived from [PRD.md](PRD.md) Section 7 (Markdown Compatibility Contract) and Section 6.2<br>
 **Canonical Path:** `docs/markdown-support.md`<br>
 **Related Epics:** `EPIC-003`, `EPIC-004`, `EPIC-005`
 

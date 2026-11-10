@@ -1,9 +1,9 @@
 # Release Acceptance Checklist (PRD §15.1)
 
 - **Document ID:** `REL-CHECKLIST-001`
-- **Authority:** [PRD Section 15.1](../PRD.md#151-release-acceptance-checklist)
+- **Authority:** [PRD Section 15.1](PRD.md#151-release-acceptance-checklist)
 - **Story Reference:** [US-032: Cross-Platform File Association Validation Matrix & Release Hardening](../stories/US-032-association-matrix-release-hardening.md)
-- **Target Platforms:** Ubuntu 24.04 LTS x64 (deb/AppImage), Windows 10/11 x64 (NSIS installer), macOS Apple Silicon (dmg/app).
+- **Target Platforms:** Ubuntu 24.04 LTS x64 (deb/AppImage/RPM/tarball), Windows 10/11 x64 (NSIS installer), macOS Universal (Apple Silicon arm64 + Intel x64 dmg/zip).
 - **Active Implementation Test Environment:** Linux Ubuntu under WSL2/WSLg (`x86_64`).
 
 ---

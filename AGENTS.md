@@ -14,7 +14,7 @@ The repository is the **single source of truth** for requirements, architecture,
 
 When documents conflict, adhere strictly to the following precedence hierarchy:
 
-1. **`PRD.md`** — Authoritative product requirements. Do not silently rewrite, weaken, or omit any requirement.
+1. **`docs/PRD.md`** — Authoritative product requirements. Do not silently rewrite, weaken, or omit any requirement.
 2. **`docs/decisions/` (ADRs)** — Authoritative architectural and technology decisions.
 3. **`docs/architecture/`** — System design, module boundaries, security policies, and test strategy.
 4. **`docs/epics/` and `docs/stories/`** — Authoritative work-item contracts, acceptance criteria, and task definitions.

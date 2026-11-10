@@ -1,6 +1,6 @@
 # Requirement Traceability Matrix
 
-This document provides complete, bidirectional traceability between the authoritative product requirements in [PRD.md](../../PRD.md) and the implementation artifacts (Epics, Stories, and Tasks).
+This document provides complete, bidirectional traceability between the authoritative product requirements in [PRD.md](../PRD.md) and the implementation artifacts (Epics, Stories, and Tasks).
 
 ---
 

@@ -1,57 +1,180 @@
 # Lumark
 
-A dedicated, fast, cross-platform desktop application for reading Markdown documents as richly formatted documents—offline, securely, and with native operating-system integration.
+Fast, cross-platform desktop Markdown reader.
 
-> **Status:** Version `0.1.0` MVP Implementation Complete. Release Hardened and Verified.
+[![Latest Release](https://img.shields.io/github/v/release/yahya-mehrabani/Lumark)](https://github.com/yahya-mehrabani/Lumark/releases/latest)
+[![Linux Build](https://github.com/yahya-mehrabani/Lumark/actions/workflows/linux-build.yml/badge.svg)](https://github.com/yahya-mehrabani/Lumark/actions/workflows/linux-build.yml)
+[![macOS Build](https://github.com/yahya-mehrabani/Lumark/actions/workflows/macos-build.yml/badge.svg)](https://github.com/yahya-mehrabani/Lumark/actions/workflows/macos-build.yml)
+[![Windows Build](https://github.com/yahya-mehrabani/Lumark/actions/workflows/windows-build.yml/badge.svg)](https://github.com/yahya-mehrabani/Lumark/actions/workflows/windows-build.yml)
+[![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20macOS%20%7C%20Linux-blue)](#download)
+[![Go Version](https://img.shields.io/badge/Go-1.26+-00ADD8?logo=go&logoColor=white)](https://go.dev)
 
----
+<!-- TODO: Capture production screenshot (Light/Dark mode, mixed Persian RTL, KaTeX math, and Mermaid diagram) -->
+![Lumark desktop Markdown reader interface](docs/assets/screenshot-placeholder.png)
 
-## 1. Project Overview
+Lumark is a dedicated desktop reader built for viewing Markdown files as clean, richly formatted documents—completely offline, secure by default, and integrated with your operating system.
 
-**Lumark** is a dedicated, fast, cross-platform desktop application for reading local Markdown files as richly formatted documents—offline, securely, and with native operating-system integration:
-- **Rich Document Rendering:** CommonMark, GitHub Flavored Markdown (tables, task lists, strikethrough), LaTeX math (KaTeX), syntax-highlighted code blocks (Shiki), and Mermaid diagrams.
-- **First-Class Bidirectional Support:** Per-block auto-detection for Persian/Arabic RTL mixed with English LTR, explicit HTML `dir` support, and scoped CSS direction control.
-- **Deep Desktop Integration:** File associations for `.md`/`.markdown`, command-line opening, single-instance routing, multi-document tabs, and native window behaviors.
-- **Local-First & Safe by Default:** Completely offline rendering with zero telemetry, strict HTML/CSS sanitization, safe SVG handling, and sandboxed WebView boundaries.
+## Features
 
----
+- **Rich Document Rendering:** CommonMark, GitHub Flavored Markdown (tables, task lists, strikethrough, autolinks), LaTeX math via KaTeX, syntax-highlighted code blocks via Shiki, and diagrams via Mermaid.
+- **First-Class Bidirectional Support:** Automatic per-block text direction detection (`dir="auto"`) for Persian, Arabic, and Hebrew. Inline and block code, math formulas, and diagrams remain strictly left-to-right.
+- **Offline & Zero Telemetry:** Local-first rendering with zero remote network requests, no analytics, and strict HTML/CSS sanitization.
+- **Desktop Integration:** File associations for `.md` and `.markdown`, command-line opening (`lumark file.md`), single-instance window routing, and multi-document tabs.
+- **Reading Tools:** Interactive Table of Contents sidebar, in-document search with match cycling, zoom controls (50%–300%), and print styling.
 
-## 2. Technology Baseline
+> **RTL Example / نمونه راست‌به‌چپ:**
+> لومارک به طور خودکار جهت پاراگراف‌های فارسی و عربی را تشخیص می‌دهد، در حالی که کدهای درون‌خطی مانند `const x = 42;` و روابط ریاضی مانند $\int_0^\infty e^{-x} dx = 1$ به صورت چپ‌به‌راست نمایش داده می‌شوند.
 
-- **Backend/Native Layer:** Go `1.26.10` with Wails v3 (`v3.0.0-beta.34`)
-- **Frontend Layer:** React 18, TypeScript, Vite, KaTeX, Mermaid, Shiki
-- **Target Platforms:** Windows 10/11 (x64), macOS (Apple Silicon arm64), Linux (Ubuntu 24.04 LTS x64)
+## Download
 
----
+Grab the latest installer or portable package from the [Releases page](https://github.com/yahya-mehrabani/Lumark/releases/latest):
 
-## 3. Build & Packaging Commands
+| Platform | Architecture | File Pattern | Notes |
+|---|---|---|---|
+| **Windows** | x64 (AMD64) | `Lumark_*_windows_amd64_setup.exe` | NSIS installer |
+| **macOS** | Universal (Apple Silicon & Intel) | `Lumark_*_macos_universal.dmg` | Disk image installer |
+| **macOS** | Universal (Apple Silicon & Intel) | `Lumark_*_macos_universal.zip` | Portable application archive |
+| **Linux** | x64 (AMD64) | `lumark_*_amd64.deb` | Debian / Ubuntu package |
+| **Linux** | x64 (AMD64) | `Lumark_*_linux_amd64.AppImage` | Standalone portable executable |
+| **Linux** | x64 (AMD64) | `lumark-*.x86_64.rpm` | Fedora / RHEL package |
+
+## Installation
+
+### Windows
+1. Download `Lumark_*_windows_amd64_setup.exe` from [Releases](https://github.com/yahya-mehrabani/Lumark/releases/latest).
+2. Run the installer and follow the setup wizard.
+3. **Unsigned Build Notice:** Release builds are currently self-signed. If Windows SmartScreen displays *"Windows protected your PC"*, click **More info**, then select **Run anyway**.
+
+### macOS
+1. Download `Lumark_*_macos_universal.dmg` from [Releases](https://github.com/yahya-mehrabani/Lumark/releases/latest).
+2. Open the `.dmg` file and drag `Lumark.app` to your `/Applications` folder.
+3. **Unsigned Build Notice:** Release builds are currently unsigned without an Apple Developer ID. If macOS Gatekeeper blocks opening:
+   - In Finder, open `/Applications`, **right-click** `Lumark.app`, select **Open**, and click **Open** in the confirmation dialog; or
+   - Run in Terminal: `xattr -dr com.apple.quarantine /Applications/Lumark.app`
+
+### Linux
+- **Debian / Ubuntu:**
+  ```bash
+  sudo apt install ./lumark_*_amd64.deb
+  ```
+- **AppImage (Standalone):**
+  ```bash
+  chmod +x Lumark_*_linux_amd64.AppImage
+  ./Lumark_*_linux_amd64.AppImage
+  ```
+  *(Note: Ubuntu 24.04+ requires `libfuse2t64` to launch AppImages: `sudo apt install libfuse2t64`)*
+- **Fedora / RHEL:**
+  ```bash
+  sudo dnf install ./lumark-*.x86_64.rpm
+  ```
+
+### Verifying Downloads
+
+Release assets are published with `SHA256SUMS.txt`. Verify your download integrity:
+
+- **Linux:**
+  ```bash
+  sha256sum -c SHA256SUMS.txt --ignore-missing
+  ```
+- **macOS:**
+  ```bash
+  shasum -a 256 <filename>
+  ```
+- **Windows (PowerShell):**
+  ```powershell
+  Get-FileHash .\<filename> -Algorithm SHA256
+  ```
+
+## Usage
+
+- **Open Files:** Double-click associated `.md` files, drag and drop files onto the window, or click **Open File**.
+- **CLI Commands:**
+  ```bash
+  lumark document.md
+  lumark docs/intro.md docs/spec.md
+  ```
+  *(If Lumark is already running, documents open as new tabs in the existing window)*.
+- **Keyboard Shortcuts:**
+  - `Ctrl+F` / `Cmd+F`: Find text in document (`Enter`/`F3` next, `Shift+Enter`/`Shift+F3` previous, `Esc` close)
+  - `Ctrl+L` / `Cmd+L` or `Alt+T`: Toggle Table of Contents outline sidebar
+  - `Ctrl+=` / `Ctrl+-` / `Ctrl+0`: Zoom in, zoom out, or reset zoom to 100%
+  - `Ctrl+W` / `Cmd+W`: Close active tab
+  - `Ctrl+P` / `Cmd+P`: Print document
+  - `Esc`: Close modals and search bar
+
+## Privacy & Security
+
+Lumark is built on a local-first threat model. Rendering occurs 100% offline with zero external network requests, zero telemetry, and zero crash reporting. All HTML/CSS and SVG content passes through strict sanitization filters (`rehype-sanitize`) to prevent script execution, CSS escape attacks, and protocol exploitation.
+
+Read our complete [Security Specification](docs/security.md) and [Security Policy](SECURITY.md).
+
+## Building from Source
+
+### Prerequisites
+
+- **Go:** `1.26.0+` (toolchain `1.26.10`)
+- **Node.js & npm:** `Node.js v22.x LTS`
+- **Wails v3 CLI:** `go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.34`
+- **Task (go-task):** `v3.x` ([installation guide](https://taskfile.dev/installation/))
+- **Platform Dependencies:**
+  - *Linux (Ubuntu/Debian):* `sudo apt-get install -y libgtk-4-dev libwebkitgtk-6.0-dev libgtk-3-dev libwebkit2gtk-4.1-dev build-essential pkg-config desktop-file-utils`
+  - *macOS:* Xcode Command Line Tools, `brew install create-dmg`
+  - *Windows:* C++ build tools (Visual Studio or MinGW), NSIS
+
+### Development & Build Commands
 
 ```bash
-# Run local development dev server
+# 1. Install frontend dependencies
+cd frontend && npm ci && cd ..
+
+# 2. Run local development server
 npm run dev
 
-# Run comprehensive automated test suites
+# 3. Run test suites
 npm test                # Frontend unit & component tests
 go test ./...           # Go backend unit tests
 npm run test:security   # Adversarial security test corpus
-npm run test:fixtures   # Golden document fixture suite
-npm run test:offline    # Network isolation & offline integrity check
-npm run benchmark       # Performance benchmark suite (PRD §12.1)
+npm run test:fixtures   # Golden markdown fixture suite
+npm run test:offline    # Offline network isolation verification
+npm run benchmark       # Rendering latency & memory benchmarks
 
-# Build production installation packages (Linux)
-npm run build:deb       # Debian package (build/bin/lumark_0.1.0-1_amd64.deb)
-npm run build:appimage  # Standalone AppImage package
-npm run test:package:linux # Automated package verification
+# 4. Build production packages
+# Linux:
+npm run build:deb       # Debian package (.deb)
+npm run build:appimage  # Standalone AppImage
+# macOS:
+task darwin:package APP_NAME=Lumark
+# Windows:
+wails3 build
 ```
 
----
+## Documentation
 
-## 4. Documentation & Verification Records
+- [Security & Privacy Specification](docs/security.md)
+- [Markdown Compatibility Contract](docs/markdown-support.md)
+- [Platform Support Matrix](docs/architecture/PLATFORM-SUPPORT.md)
+- [Packaging & OS Integration](docs/packaging.md)
+- [Release Acceptance Checklist](docs/release-checklist.md)
+- [Architecture Overview](docs/architecture/OVERVIEW.md)
+- [Product Requirements Document (PRD)](docs/PRD.md)
 
-- **Release Acceptance Checklist:** [docs/release-checklist.md](docs/release-checklist.md) (All 18 P0 items verified)
-- **Packaging & OS Integration:** [docs/packaging.md](docs/packaging.md)
-- **Platform Support Matrix:** [docs/architecture/PLATFORM-SUPPORT.md](docs/architecture/PLATFORM-SUPPORT.md)
-- **Markdown Specification:** [docs/markdown-support.md](docs/markdown-support.md)
-- **Security & Sanitization Policy:** [docs/security.md](docs/security.md)
-- **Product Requirements:** [PRD.md](PRD.md)
-- **Changelog:** [CHANGELOG.md](CHANGELOG.md)
+## Contributing
+
+Contributions, bug reports, and suggestions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) and our [Code of Conduct](CODE_OF_CONDUCT.md).
+
+## Security
+
+To report a security vulnerability, please submit a private advisory through [GitHub Security](https://github.com/yahya-mehrabani/Lumark/security/advisories/new). See [SECURITY.md](SECURITY.md) for full disclosure policies and response timelines.
+
+## License
+
+*(License choice pending maintainer selection — see [CONTRIBUTING.md](CONTRIBUTING.md))*.
+
+## Acknowledgments
+
+Lumark is powered by open-source technologies:
+- [Wails](https://wails.io/) — Cross-platform Go desktop application framework
+- [React](https://react.dev/) & [Vite](https://vitejs.dev/) — Frontend interface and asset bundler
+- [KaTeX](https://katex.org/) — Fast math formula typesetting
+- [Mermaid](https://mermaid.js.org/) — Diagram and chart generation
+- [Shiki](https://shiki.style/) — Syntax highlighter

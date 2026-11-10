@@ -1,0 +1,57 @@
+name: Feature Request
+description: Propose a new feature, enhancement, or capability for Lumark
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping improve Lumark! Lumark is a dedicated, offline-first Markdown reader.
+        Before submitting, please make sure your proposal aligns with Lumark's core philosophy (offline, local-first, zero telemetry, viewing-focused).
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or Use Case
+      description: Is your feature request related to a problem or workflow limitation?
+      placeholder: I am always frustrated when...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution / Enhancement
+      description: Describe the solution or new feature you would like to see.
+      placeholder: Add support for...
+    validations:
+      required: true
+
+  - type: textarea
+    id: sample-markdown
+    attributes:
+      label: Sample Markdown or Use-Case File
+      description: If this feature affects Markdown syntax or rendering, attach or paste a sample `.md` snippet demonstrating the desired output.
+      placeholder: |
+        ```markdown
+        # Desired syntax
+        ...
+        ```
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Describe any alternative solutions, tools, or workarounds you have considered.
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Add any mockups, links to relevant specifications (e.g. CommonMark/GFM extensions), or other notes.
+    validations:
+      required: false

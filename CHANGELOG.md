@@ -46,3 +46,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Performance benchmark suite (`scripts/benchmark.sh`) validating PRD §12.1 targets (< 2.5s cold start, 2.2ms 1 MiB read, 7.2ms 5 MiB read, bounded memory).
   - Offline integrity test suite (`scripts/test-offline.sh`) verifying zero external network calls.
   - 18-point Release Acceptance Checklist verified and established in `docs/release-checklist.md`.
+
+[Unreleased]: https://github.com/yahya-mehrabani/Lumark/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/yahya-mehrabani/Lumark/releases/tag/v0.1.0

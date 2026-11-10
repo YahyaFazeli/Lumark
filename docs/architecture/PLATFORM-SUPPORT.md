@@ -2,16 +2,16 @@
 
 ## 1. Supported Operating System Matrix
 
-The target platform matrix is defined in [PRD.md Section 1.3 & Section 11](../../PRD.md). Platform support cannot be claimed solely because code compiles; each OS requires concrete packaging, association, and runtime validation.
+The target platform matrix is defined in [PRD.md Section 1.3 & Section 11](../PRD.md). Platform support cannot be claimed solely because code compiles; each OS requires concrete packaging, association, and runtime validation.
 
 | Operating System | Architecture | Primary Package Format | Minimum Supported Version | Runtime Engine Baseline | Current Local Environment Status |
 |---|---|---|---|---|---|
 | **Linux (Native)** | x64 (AMD64) | `.deb` (primary), AppImage | Ubuntu 24.04 LTS | WebKitGTK 6.0 (v3 candidate) / WebKit2GTK 4.1 (v2 fallback) | **BLOCKED** for native desktop associations; WSL2/WSLg graphical available |
 | **Linux (WSL2/WSLg)** | x64 (AMD64) | Standalone binary / `.deb` | Ubuntu 24.04 / 26.04 WSL2 | WebKitGTK / WSLg Wayland/X11 (`DISPLAY=:0`) | **AVAILABLE** for headless/graphical runtime; no native desktop integration |
 | **Windows** | x64 (AMD64) | NSIS Installer (`.exe`) | Windows 10 (22H2), Windows 11 | Microsoft Edge WebView2 | **BLOCKED / NOT RUN** (No Go/build tools in Windows host PATH) |
-| **macOS** | Apple Silicon (arm64) | Signed `.dmg` / `.app` | macOS 13 (Ventura) + 2 preceding | Apple WebKit (WKWebView) | **BLOCKED / NOT RUN** (No Apple Silicon hardware available locally) |
-| *macOS (Intel)* | x64 | `.dmg` / `.app` | macOS 13 (Ventura) | Apple WebKit (WKWebView) | *Deferred until CI hardware verification* |
+| **macOS** | Universal (arm64 + x64) | Signed `.dmg` / `.app` | macOS 12 (Monterey) / 13 (Ventura) + | Apple WebKit (WKWebView) | **BLOCKED / NOT RUN** (Dedicated macOS runner required; CI builds Universal binary) |
 | *Windows (ARM64)* | ARM64 | NSIS Installer | Windows 11 ARM64 | Microsoft Edge WebView2 | *Deferred until hardware verification* |
+| *Linux (ARM64)* | ARM64 | `.deb` / AppImage | Ubuntu 24.04 LTS ARM64 | WebKitGTK 6.0 / WebKit2GTK 4.1 | *Deferred until hardware verification* |
 
 ---
 
@@ -59,9 +59,9 @@ The target platform matrix is defined in [PRD.md Section 1.3 & Section 11](../..
 
 ---
 
-### 2.3 macOS (Apple Silicon arm64)
+### 2.3 macOS (Universal: Apple Silicon arm64 + Intel x64)
 
-- **Current Environment Constraint:** No macOS hardware is available locally. macOS builds and runtime verification must be performed on dedicated Apple Silicon hardware or CI runners (`macos-latest` / `macos-14`).
+- **Current Environment Constraint:** No macOS hardware is available locally. macOS builds and runtime verification are performed via CI runners (`macos-latest`). CI packages a Universal fat binary (`lipo`) supporting both Apple Silicon (`arm64`) and Intel 64-bit (`x86_64`).
 - **Packaging:**
   - `.app` bundle packaged inside a `.dmg` with an `/Applications` symlink.
   - Info.plist declares:
