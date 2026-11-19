@@ -175,7 +175,7 @@ const MarkdownContentBody = React.memo(
       return (
         <main
           ref={ref}
-          className="markdown-content document-wrapper markdown-body"
+          className="markdown-content"
           data-testid="markdown-content"
           tabIndex={0}
           dir={activePref !== 'auto' ? activePref : undefined}
@@ -184,24 +184,28 @@ const MarkdownContentBody = React.memo(
             outline: 'none',
           }}
         >
-          <SlugContext.Provider value={slugTracker}>
-            <MarkdownDocContext.Provider value={docContextValue}>
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm, remarkMath, remarkStrictMath]}
-                rehypePlugins={[
-                  rehypeRaw,
-                  [rehypeSanitize, SANITY_HTML_SCHEMA],
-                  rehypeScopedCss,
-                  [rehypeKatex, STRICT_KATEX_OPTIONS],
-                  [rehypeAutoDirection, { userPreference: activePref }],
-                ]}
-                urlTransform={(url) => url}
-                components={MARKDOWN_COMPONENTS}
-              >
-                {content}
-              </ReactMarkdown>
-            </MarkdownDocContext.Provider>
-          </SlugContext.Provider>
+          {content ? (
+            <div className="document-wrapper markdown-body">
+              <SlugContext.Provider value={slugTracker}>
+                <MarkdownDocContext.Provider value={docContextValue}>
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm, remarkMath, remarkStrictMath]}
+                    rehypePlugins={[
+                      rehypeRaw,
+                      [rehypeSanitize, SANITY_HTML_SCHEMA],
+                      rehypeScopedCss,
+                      [rehypeKatex, STRICT_KATEX_OPTIONS],
+                      [rehypeAutoDirection, { userPreference: activePref }],
+                    ]}
+                    urlTransform={(url) => url}
+                    components={MARKDOWN_COMPONENTS}
+                  >
+                    {content}
+                  </ReactMarkdown>
+                </MarkdownDocContext.Provider>
+              </SlugContext.Provider>
+            </div>
+          ) : null}
         </main>
       );
     }

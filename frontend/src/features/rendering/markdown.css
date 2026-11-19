@@ -18,9 +18,9 @@
   border: none;
   border-radius: 0;
   box-shadow: none;
-  overflow-y: auto !important;
-  overflow-x: hidden;
+  overflow: hidden;
   position: relative;
+  scrollbar-gutter: stable;
   scrollbar-width: none;
   -ms-overflow-style: none;
   --default-contextmenu: show;
@@ -34,8 +34,10 @@
 
 /* --- Floating Toolbar Pill --- */
 .floating-toolbar-container {
-  position: sticky;
+  position: absolute;
   top: 18px;
+  left: 0;
+  right: 0;
   z-index: 20;
   display: flex;
   flex-direction: column;
@@ -307,8 +309,9 @@ body.focus-mode .floating-toolbar-container {
 .markdown-viewport-body {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   width: 100%;
+  height: 100%;
   flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
@@ -320,8 +323,6 @@ body.focus-mode .floating-toolbar-container {
   min-width: 0;
   min-height: 0;
   width: 100%;
-  max-width: 700px;
-  margin: 0 auto;
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
@@ -348,8 +349,9 @@ body.focus-mode .floating-toolbar-container {
   box-sizing: border-box;
   width: 100%;
   max-width: 700px;
+  min-height: 100%;
   margin: 0 auto;
-  padding: 44px 38px 120px 38px;
+  padding: 56px 38px 120px 38px;
   scrollbar-gutter: stable;
   color: var(--text-body);
   font-family: var(--font-serif, "Lora", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Vazirmatn", "Tahoma", sans-serif);
@@ -366,9 +368,9 @@ body.focus-mode .floating-toolbar-container {
 .markdown-content {
   box-sizing: border-box;
   width: 100%;
-  max-width: 700px;
-  margin: 0 auto;
-  padding: 44px 28px 120px 28px;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
   color: var(--text-body);
   font-family: var(--font-serif, "Lora", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Vazirmatn", "Tahoma", sans-serif);
   font-size: 16.5px;

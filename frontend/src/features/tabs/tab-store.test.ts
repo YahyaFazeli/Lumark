@@ -43,6 +43,26 @@ describe('TabStateStore (US-007.1)', () => {
     expect(state.activeTabId).toBe(tab2.id);
   });
 
+  it('always appends newly opened tabs to the END of the tab list and sets activeTabId immediately', () => {
+    const tab1 = store.openTab({ filePath: '/tabs/first.md', content: 'First' });
+    const tab2 = store.openTab({ filePath: '/tabs/second.md', content: 'Second' });
+    const tab3 = store.openTab({ filePath: '/tabs/third.md', content: 'Third' });
+
+    const state = store.getState();
+    expect(state.tabs).toHaveLength(3);
+    expect(state.tabs[0].id).toBe(tab1.id);
+    expect(state.tabs[1].id).toBe(tab2.id);
+    expect(state.tabs[2].id).toBe(tab3.id);
+    expect(state.activeTabId).toBe(tab3.id);
+
+    // Add another tab (e.g. from OS)
+    const tab4 = store.openTab({ filePath: '/tabs/from-os.md', content: 'From OS' });
+    const updatedState = store.getState();
+    expect(updatedState.tabs).toHaveLength(4);
+    expect(updatedState.tabs[3].id).toBe(tab4.id);
+    expect(updatedState.activeTabId).toBe(tab4.id);
+  });
+
   it('prevents duplicate tabs and focuses existing tab without altering order', () => {
     const tab1 = store.openTab({ filePath: '/docs/intro.md', content: 'Intro' });
     const tab2 = store.openTab({ filePath: '/docs/setup.md', content: 'Setup' });

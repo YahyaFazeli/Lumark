@@ -222,10 +222,6 @@ func (c *Coordinator) handleConn(conn net.Conn) {
 		return
 	}
 
-	if ackErr := sendAck(conn); ackErr != nil {
-		return
-	}
-
 	if c.opts.OnMessage != nil {
 		c.opts.OnMessage(msg)
 	}
@@ -233,8 +229,13 @@ func (c *Coordinator) handleConn(conn net.Conn) {
 	select {
 	case c.msgChan <- msg:
 	case <-c.done:
+		return
 	default:
 		// Message channel full
+	}
+
+	if ackErr := sendAck(conn); ackErr != nil {
+		return
 	}
 }
 

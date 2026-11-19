@@ -84,7 +84,8 @@
   .document-container,
   .markdown-viewport,
   .markdown-viewport-body,
-  .markdown-content {
+  .markdown-content,
+  .document-wrapper {
     background: #ffffff !important;
     background-color: #ffffff !important;
     color: #111827 !important;

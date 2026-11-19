@@ -141,4 +141,38 @@ describe('Tab Restoration Logic (US-026.3)', () => {
     const updated = settingsStore.getSettings();
     expect(updated.openTabs).toEqual(['/notes/todo.md']);
   });
+
+  it('preserves focus on an existing active tab when restoreTabsOnStartup executes', async () => {
+    const tabStore = createTabStore();
+    // A document was already opened (e.g. from OS/CLI or user action)
+    const initialTab = tabStore.openTab({
+      filePath: '/docs/cli-file.md',
+      filename: 'cli-file.md',
+      content: '# Initial Active Doc',
+    });
+    expect(tabStore.getState().activeTabId).toBe(initialTab.id);
+
+    const initialSettings: AppSettings = {
+      ...DEFAULT_APP_SETTINGS,
+      restoreOpenTabs: true,
+      openTabs: ['/docs/old-1.md', '/docs/old-2.md'],
+    };
+    const settingsStore = new SettingsStore(new InMemorySettingsAdapter(initialSettings));
+    await settingsStore.load();
+
+    const mockLoader: DocumentLoader = vi.fn().mockImplementation(async (path: string) => ({
+      filePath: path,
+      filename: path.split('/').pop() || 'doc.md',
+      content: `# Content for ${path}`,
+    }));
+
+    await restoreTabsOnStartup({
+      tabStore,
+      settingsStore,
+      docLoader: mockLoader,
+    });
+
+    // The initial tab remains the active tab, not overridden by the last restored tab
+    expect(tabStore.getState().activeTabId).toBe(initialTab.id);
+  });
 });

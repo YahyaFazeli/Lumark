@@ -142,33 +142,32 @@ func main() {
 		singleInstanceOpt = &application.SingleInstanceOptions{
 			UniqueID: "com.lumark.app",
 			OnSecondInstanceLaunch: func(data application.SecondInstanceData) {
-				log.Printf("[SingleInstance] Second instance launched: %v (dir: %s)", data.Args, data.WorkingDir)
-				for _, arg := range data.Args {
-					logReceivedFile("SingleInstance", arg)
-					targetFile := arg
-					if !filepath.IsAbs(targetFile) {
-						targetFile = filepath.Join(data.WorkingDir, targetFile)
-					}
-					if doc, loadErr := docService.LoadFile(targetFile); loadErr != nil {
-						log.Printf("[DocumentService] Failed to load forwarded document %s: %v", targetFile, loadErr)
-					} else {
-						log.Printf("[DocumentService] Forwarded document loaded: %s (dir: %s, bytes: %d)",
-							doc.Filename, doc.Dir, len(doc.Content))
-						if app != nil {
-							app.Event.Emit("document:open", doc)
+				go func() {
+					log.Printf("[SingleInstance] Second instance launched: %v (dir: %s)", data.Args, data.WorkingDir)
+					for _, arg := range data.Args {
+						logReceivedFile("SingleInstance", arg)
+						targetFile := arg
+						if !filepath.IsAbs(targetFile) {
+							targetFile = filepath.Join(data.WorkingDir, targetFile)
+						}
+						if doc, loadErr := docService.LoadFile(targetFile); loadErr != nil {
+							log.Printf("[DocumentService] Failed to load forwarded document %s: %v", targetFile, loadErr)
+						} else {
+							log.Printf("[DocumentService] Forwarded document loaded: %s (dir: %s, bytes: %d)",
+								doc.Filename, doc.Dir, len(doc.Content))
+							if app != nil {
+								app.Event.Emit("document:open", doc)
+							}
 						}
 					}
-					if app != nil {
-						app.Event.Emit("file:open", arg)
+					if mainWindow != nil {
+						if mainWindow.IsMinimised() {
+							mainWindow.Restore()
+						}
+						mainWindow.Show()
+						mainWindow.Focus()
 					}
-				}
-				if mainWindow != nil {
-					if mainWindow.IsMinimised() {
-						mainWindow.Restore()
-					}
-					mainWindow.Show()
-					mainWindow.Focus()
-				}
+				}()
 			},
 		}
 	}
@@ -311,7 +310,6 @@ func main() {
 							doc.Filename, doc.Dir, len(doc.Content))
 						app.Event.Emit("document:open", doc)
 					}
-					app.Event.Emit("file:open", arg)
 				}
 				// Bring the main window forward and request focus
 				if mainWindow != nil {

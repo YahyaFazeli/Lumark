@@ -51,18 +51,20 @@ func NewDocumentRouter(window WindowController, events EventDispatcher, opts ...
 // RouteFiles normalizes and dispatches a list of file paths, then activates the window.
 // Returns the list of canonical paths dispatched.
 func (r *DocumentRouter) RouteFiles(baseDir string, rawPaths []string) ([]string, error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
 	parsed, err := ParseCLI(baseDir, rawPaths)
 	if err != nil {
 		return nil, fmt.Errorf("parse file paths: %w", err)
 	}
 
+	r.mu.Lock()
+	events := r.events
+	eventName := r.eventName
+	r.mu.Unlock()
+
 	dispatched := make([]string, 0, len(parsed.Files))
 	for _, file := range parsed.Files {
-		if r.events != nil {
-			r.events.Emit(r.eventName, file)
+		if events != nil {
+			events.Emit(eventName, file)
 		}
 		dispatched = append(dispatched, file)
 	}
@@ -83,14 +85,18 @@ func (r *DocumentRouter) RouteMessage(msg Message) ([]string, error) {
 
 // activateWindow brings the native desktop window forward and requests user focus.
 func (r *DocumentRouter) activateWindow() {
-	if r.window == nil {
+	r.mu.Lock()
+	win := r.window
+	r.mu.Unlock()
+
+	if win == nil {
 		return
 	}
-	if r.window.IsMinimised() {
-		r.window.Restore()
+	if win.IsMinimised() {
+		win.Restore()
 	}
-	r.window.Show()
-	r.window.Focus()
+	win.Show()
+	win.Focus()
 }
 
 // SetWindow updates the active window controller (e.g. after window creation in Wails).

@@ -57,6 +57,7 @@ export async function restoreTabsOnStartup(
     return { restoredCount: 0, restoredPaths: [], failedPaths: [] };
   }
 
+  const initialActiveId = options.tabStore.getState().activeTabId;
   const restoredPaths: string[] = [];
   const failedPaths: string[] = [];
 
@@ -86,6 +87,11 @@ export async function restoreTabsOnStartup(
       });
       failedPaths.push(filePath);
     }
+  }
+
+  // Preserve previously active tab focus if a file was already loaded prior to restoration
+  if (initialActiveId && options.tabStore.getState().tabs.some((t) => t.id === initialActiveId)) {
+    options.tabStore.switchTab(initialActiveId);
   }
 
   return {

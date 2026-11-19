@@ -47,10 +47,6 @@ func HandleMacOpenFile(filePath string, app *application.App, loader DocumentLoa
 		}
 	}
 
-	if app != nil {
-		app.Event.Emit("file:open", filePath)
-	}
-
 	if window != nil {
 		if window.IsMinimised() {
 			window.Restore()
