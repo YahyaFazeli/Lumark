@@ -7,7 +7,7 @@
   z-index: 100;
   display: flex;
   flex-direction: column;
-  padding: 16px 0;
+  padding: 0 0 16px 0;
   background: transparent;
   border: none;
   user-select: none;
@@ -19,6 +19,11 @@
   -ms-overflow-style: none;
   width: 220px;
   box-sizing: border-box;
+}
+
+.scrollspy-rail:not(:has(.toc-counter)) .toc-list,
+.toc-sidebar:not(:has(.toc-counter)) .toc-list {
+  padding-top: 16px;
 }
 
 .scrollspy-rail::-webkit-scrollbar,
@@ -54,13 +59,17 @@
 
 /* Section Counter (e.g., "02 / 12") */
 .toc-counter {
+  position: sticky;
+  top: 0;
+  background: var(--bg-canvas);
+  z-index: 10;
   font-family: var(--font-mono, monospace);
   font-size: 11px;
   font-weight: 500;
   color: var(--text-muted);
   letter-spacing: 0.06em;
-  padding: 0 10px;
-  margin-bottom: 12px;
+  padding: 16px 10px 12px;
+  margin-bottom: 0;
   user-select: none;
   line-height: 1;
   width: 100%;

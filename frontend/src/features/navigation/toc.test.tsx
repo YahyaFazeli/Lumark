@@ -273,4 +273,67 @@ console.log('No headings here');
 
     expect(screen.getByTestId('toc-sidebar')).toBeInTheDocument();
   });
+
+  it('Auto-scroll: watches activeIndex and calls scrollIntoView on active TOC item without scrolling main document', () => {
+    const items = extractHeadingsFromMarkdown(`
+# Chapter 1
+## Chapter 2
+## Chapter 3
+## Chapter 4
+`);
+    const tree = buildTocTree(items);
+    const mockContainer = document.createElement('div');
+    mockContainer.className = 'markdown-viewport';
+    mockContainer.scrollTop = 350;
+    const containerRef = { current: mockContainer } as React.RefObject<HTMLElement>;
+
+    scrollIntoViewMock.mockClear();
+
+    const { rerender } = render(
+      <TableOfContents
+        items={items}
+        tree={tree}
+        activeId="chapter-1"
+        containerRef={containerRef}
+      />
+    );
+
+    // Initial render active item
+    expect(scrollIntoViewMock).toHaveBeenCalledWith({
+      block: 'nearest',
+      behavior: 'smooth',
+    });
+    scrollIntoViewMock.mockClear();
+
+    // Change active section to Chapter 3 (activeIndex updates from 0 to 2)
+    rerender(
+      <TableOfContents
+        items={items}
+        tree={tree}
+        activeId="chapter-3"
+        containerRef={containerRef}
+      />
+    );
+
+    expect(scrollIntoViewMock).toHaveBeenCalledTimes(1);
+    expect(scrollIntoViewMock).toHaveBeenCalledWith({
+      block: 'nearest',
+      behavior: 'smooth',
+    });
+
+    // Verify main document container scrollTop was preserved and not scrolled
+    expect(mockContainer.scrollTop).toBe(350);
+  });
+
+  it('Sticky Counter: has sticky positioning, top: 0, canvas background, and z-index: 10', async () => {
+    const fs = await import('fs');
+    const path = await import('path');
+    const cssContent = fs.readFileSync(path.resolve(__dirname, 'toc.css'), 'utf-8');
+
+    // Verify .toc-counter sticky style rules
+    expect(cssContent).toMatch(/\.toc-counter\s*\{[^}]*position:\s*sticky;/);
+    expect(cssContent).toMatch(/\.toc-counter\s*\{[^}]*top:\s*0;/);
+    expect(cssContent).toMatch(/\.toc-counter\s*\{[^}]*background:\s*var\(--bg-canvas\);/);
+    expect(cssContent).toMatch(/\.toc-counter\s*\{[^}]*z-index:\s*10;/);
+  });
 });

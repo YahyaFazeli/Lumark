@@ -94,33 +94,26 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
   }, [activeIndex, effectiveItems.length]);
 
   const railRef = React.useRef<HTMLElement | null>(null);
+  const activeItemRef = React.useRef<HTMLLIElement | null>(null);
 
   // Auto-scroll active item into view within the rail as the user scrolls the document
   React.useEffect(() => {
-    if (!activeId || !railRef.current) return;
-    try {
-      const rail = railRef.current;
-      const activeEl = rail.querySelector<HTMLElement>(
-        `[data-target="${CSS.escape(activeId)}"], [href="#${CSS.escape(activeId)}"]`
-      );
-      if (!activeEl) return;
+    if (!hasHeadings || !activeItemRef.current) return;
 
-      if (rail.scrollHeight > rail.clientHeight && rail.clientHeight > 0) {
-        const itemTop = activeEl.offsetTop;
-        const itemHeight = activeEl.offsetHeight;
-        const railScrollTop = rail.scrollTop;
-        const railHeight = rail.clientHeight;
+    const mainDoc = containerRef?.current;
+    const prevScrollTop = mainDoc?.scrollTop;
 
-        if (itemTop < railScrollTop) {
-          rail.scrollTo?.({ top: Math.max(0, itemTop - 20), behavior: 'smooth' });
-        } else if (itemTop + itemHeight > railScrollTop + railHeight) {
-          rail.scrollTo?.({ top: itemTop + itemHeight - railHeight + 20, behavior: 'smooth' });
-        }
-      }
-    } catch {
-      // Fallback for non-standard IDs or environments
+    if (typeof activeItemRef.current.scrollIntoView === 'function') {
+      activeItemRef.current.scrollIntoView({
+        block: 'nearest',
+        behavior: 'smooth',
+      });
     }
-  }, [activeId]);
+
+    if (mainDoc && prevScrollTop !== undefined && mainDoc.scrollTop !== prevScrollTop) {
+      mainDoc.scrollTop = prevScrollTop;
+    }
+  }, [activeIndex]);
 
   if (!isOpen) {
     return null;
@@ -220,6 +213,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
     return (
       <li
         key={node.id}
+        ref={isActive ? activeItemRef : undefined}
         className={`toc-item toc-level-${node.level} ${isActive ? 'active' : ''}`}
         data-testid={`toc-item-${node.id}`}
         data-level={node.level}

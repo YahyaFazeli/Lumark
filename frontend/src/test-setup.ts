@@ -55,3 +55,9 @@ if (typeof Element !== 'undefined' && !Element.prototype.scrollTo) {
 if (typeof HTMLElement !== 'undefined' && !HTMLElement.prototype.scrollTo) {
   HTMLElement.prototype.scrollTo = function () {};
 }
+if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = function () {};
+}
+if (typeof HTMLElement !== 'undefined' && !HTMLElement.prototype.scrollIntoView) {
+  HTMLElement.prototype.scrollIntoView = function () {};
+}
