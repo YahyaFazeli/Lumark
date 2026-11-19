@@ -98,194 +98,194 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
 
   // Auto-scroll active item into view within the rail as the user scrolls the document
   React.useEffect(() => {
-    if (!hasHeadings || !activeItemRef.current) return;
+      if (!hasHeadings || !activeItemRef.current) return;
 
-    const mainDoc = containerRef?.current;
-    const prevScrollTop = mainDoc?.scrollTop;
+        const mainDoc = containerRef?.current;
+        const prevScrollTop = mainDoc?.scrollTop;
 
-    if (typeof activeItemRef.current.scrollIntoView === 'function') {
-      activeItemRef.current.scrollIntoView({
-        block: 'nearest',
-        behavior: 'smooth',
-      });
-    }
-
-    if (mainDoc && prevScrollTop !== undefined && mainDoc.scrollTop !== prevScrollTop) {
-      mainDoc.scrollTop = prevScrollTop;
-    }
-  }, [activeIndex]);
-
-  if (!isOpen) {
-    return null;
-  }
-
-  const handleHeadingClick = (e: React.MouseEvent, id: string) => {
-    e.preventDefault();
-
-    setClickedId(id);
-    spyData.setActiveId(id);
-
-    if (onSelectHeading) {
-      onSelectHeading(id);
-    }
-
-    const decodedId = (() => {
-      try {
-        return decodeURIComponent(id);
-      } catch {
-        return id;
-      }
-    })();
-
-    // Locate target element within container or document
-    const container =
-      (containerRef?.current?.closest?.('.markdown-viewport') as HTMLElement | null) ||
-      document.querySelector<HTMLElement>('.markdown-viewport') ||
-      (containerRef?.current as HTMLElement | null) ||
-      (typeof document !== 'undefined'
-        ? (document.scrollingElement as HTMLElement) || document.documentElement || document.body
-        : null);
-
-    let target: HTMLElement | null = null;
-
-    if (container && typeof CSS !== 'undefined') {
-      try {
-        target =
-          container.querySelector<HTMLElement>(`#${CSS.escape(id)}`) ||
-          container.querySelector<HTMLElement>(`#${CSS.escape(decodedId)}`) ||
-          container.querySelector<HTMLElement>(`[data-heading-id="${CSS.escape(id)}"]`) ||
-          container.querySelector<HTMLElement>(`[data-heading-id="${CSS.escape(decodedId)}"]`);
-      } catch {
-        target = null;
-      }
-    }
-
-    if (!target) {
-      target = document.getElementById(id) || document.getElementById(decodedId);
-    }
-
-    if (!target && typeof CSS !== 'undefined') {
-      try {
-        const escaped = CSS.escape(id);
-        const escapedDecoded = CSS.escape(decodedId);
-        target =
-          document.querySelector<HTMLElement>(`[data-heading-id="${escaped}"]`) ||
-          document.querySelector<HTMLElement>(`[data-heading-id="${escapedDecoded}"]`) ||
-          document.querySelector<HTMLElement>(`[name="${escaped}"]`) ||
-          document.querySelector<HTMLElement>(`[name="${escapedDecoded}"]`);
-      } catch {
-        target = null;
-      }
-    }
-
-    if (target && container) {
-      const prefersReducedMotion =
-        typeof window !== 'undefined' &&
-        window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
-      const behavior: ScrollBehavior = prefersReducedMotion ? 'auto' : 'smooth';
-
-      const targetRect =
-        typeof target.getBoundingClientRect === 'function'
-          ? target.getBoundingClientRect()
-          : { top: 0 };
-      const currentScrollTop = container.scrollTop || 0;
-      const targetTop = targetRect.top + currentScrollTop - 80;
-
-      if (typeof container.scrollTo === 'function') {
-        container.scrollTo({ top: targetTop, behavior });
-      } else {
-        container.scrollTop = targetTop;
-      }
-
-      if (typeof window !== 'undefined' && window.localStorage?.getItem('debugOutline') === '1') {
-        requestAnimationFrame(() => {
-          const diagMsg = `[Outline Debug] Target: "${target?.id}" | scrollTo dispatched (top: ${targetTop}, behavior: ${behavior})`;
-          defaultToastStore.showInfo(diagMsg);
-          console.info(diagMsg);
+      if (typeof activeItemRef.current.scrollIntoView === 'function') {
+        activeItemRef.current.scrollIntoView({
+          block: 'nearest',
+          behavior: 'smooth',
         });
       }
+
+  if (mainDoc && prevScrollTop !== undefined && mainDoc.scrollTop !== prevScrollTop) {
+    mainDoc.scrollTop = prevScrollTop;
+  }
+}, [activeIndex]);
+
+if (!isOpen) {
+  return null;
+}
+
+const handleHeadingClick = (e: React.MouseEvent, id: string) => {
+  e.preventDefault();
+
+  setClickedId(id);
+  spyData.setActiveId(id);
+
+  if (onSelectHeading) {
+    onSelectHeading(id);
+  }
+
+  const decodedId = (() => {
+    try {
+      return decodeURIComponent(id);
+    } catch {
+      return id;
     }
-  };
+  })();
 
-  const renderNode = (node: TocNode): React.ReactNode => {
-    const isActive = activeId === node.id;
+  // Locate target element within container or document
+  const container =
+    (containerRef?.current?.closest?.('.markdown-viewport') as HTMLElement | null) ||
+    document.querySelector<HTMLElement>('.markdown-viewport') ||
+    (containerRef?.current as HTMLElement | null) ||
+    (typeof document !== 'undefined'
+      ? (document.scrollingElement as HTMLElement) || document.documentElement || document.body
+      : null);
 
-    return (
-      <li
-        key={node.id}
-        ref={isActive ? activeItemRef : undefined}
-        className={`toc-item toc-level-${node.level} ${isActive ? 'active' : ''}`}
-        data-testid={`toc-item-${node.id}`}
-        data-level={node.level}
-      >
-        <a
-          href={`#${node.id}`}
-          className={`spy-item toc-link ${isActive ? 'active' : ''}`}
-          aria-current={isActive ? 'location' : undefined}
-          onClick={(e) => handleHeadingClick(e, node.id)}
-          data-testid={`toc-link-${node.id}`}
-          data-target={node.id}
-        >
-          <span className="spy-label toc-text" dir="auto">
-            {node.text}
-          </span>
-          <span className="spy-marker toc-bullet" aria-hidden="true" />
-        </a>
+  let target: HTMLElement | null = null;
 
-        {node.children && node.children.length > 0 && (
-          <ul className="toc-sublist" role="list">
-            {node.children.map(renderNode)}
-          </ul>
-        )}
-      </li>
-    );
-  };
+  if (container && typeof CSS !== 'undefined') {
+    try {
+      target =
+        container.querySelector<HTMLElement>(`#${CSS.escape(id)}`) ||
+        container.querySelector<HTMLElement>(`#${CSS.escape(decodedId)}`) ||
+        container.querySelector<HTMLElement>(`[data-heading-id="${CSS.escape(id)}"]`) ||
+        container.querySelector<HTMLElement>(`[data-heading-id="${CSS.escape(decodedId)}"]`);
+    } catch {
+      target = null;
+    }
+  }
+
+  if (!target) {
+    target = document.getElementById(id) || document.getElementById(decodedId);
+  }
+
+  if (!target && typeof CSS !== 'undefined') {
+    try {
+      const escaped = CSS.escape(id);
+      const escapedDecoded = CSS.escape(decodedId);
+      target =
+        document.querySelector<HTMLElement>(`[data-heading-id="${escaped}"]`) ||
+        document.querySelector<HTMLElement>(`[data-heading-id="${escapedDecoded}"]`) ||
+        document.querySelector<HTMLElement>(`[name="${escaped}"]`) ||
+        document.querySelector<HTMLElement>(`[name="${escapedDecoded}"]`);
+    } catch {
+      target = null;
+    }
+  }
+
+  if (target && container) {
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+    const behavior: ScrollBehavior = prefersReducedMotion ? 'auto' : 'smooth';
+
+    const targetRect =
+      typeof target.getBoundingClientRect === 'function'
+        ? target.getBoundingClientRect()
+        : { top: 0 };
+    const currentScrollTop = container.scrollTop || 0;
+    const targetTop = targetRect.top + currentScrollTop - 80;
+
+    if (typeof container.scrollTo === 'function') {
+      container.scrollTo({ top: targetTop, behavior });
+    } else {
+      container.scrollTop = targetTop;
+    }
+
+    if (typeof window !== 'undefined' && window.localStorage?.getItem('debugOutline') === '1') {
+      requestAnimationFrame(() => {
+        const diagMsg = `[Outline Debug] Target: "${target?.id}" | scrollTo dispatched (top: ${targetTop}, behavior: ${behavior})`;
+        defaultToastStore.showInfo(diagMsg);
+        console.info(diagMsg);
+      });
+    }
+  }
+};
+
+const renderNode = (node: TocNode): React.ReactNode => {
+  const isActive = activeId === node.id;
 
   return (
-    <nav
-      ref={railRef}
-      className={`scrollspy-rail toc-sidebar toc-${position} ${!isOpen ? 'hidden' : ''} ${className}`.trim()}
-      aria-label="Table of Contents"
-      data-testid="toc-sidebar"
-      data-position={position}
-      dir={position === 'right' ? 'rtl' : 'ltr'}
+    <li
+      key={node.id}
+      ref={isActive ? activeItemRef : undefined}
+      className={`toc-item toc-level-${node.level} ${isActive ? 'active' : ''}`}
+      data-testid={`toc-item-${node.id}`}
+      data-level={node.level}
     >
-      {onClose && (
-        <button
-          type="button"
-          className="toc-close-btn"
-          onClick={onClose}
-          aria-label="Close Table of Contents"
-          data-testid="toc-close-button"
-          style={{
-            position: 'absolute',
-            width: '1px',
-            height: '1px',
-            padding: 0,
-            margin: '-1px',
-            overflow: 'hidden',
-            clip: 'rect(0, 0, 0, 0)',
-            whiteSpace: 'nowrap',
-            borderWidth: 0,
-          }}
-        >
-          Close
-        </button>
-      )}
-      {hasHeadings && counterText && (
-        <div className="toc-counter" dir="ltr" data-testid="toc-counter">
-          {counterText}
-        </div>
-      )}
-      {!hasHeadings ? (
-        <div className="toc-empty" data-testid="toc-empty" style={{ display: 'none' }}>
-          No headings found in document.
-        </div>
-      ) : (
-        <ul className="toc-list" role="list" data-testid="toc-list">
-          {effectiveTree.map(renderNode)}
+      <a
+        href={`#${node.id}`}
+        className={`spy-item toc-link ${isActive ? 'active' : ''}`}
+        aria-current={isActive ? 'location' : undefined}
+        onClick={(e) => handleHeadingClick(e, node.id)}
+        data-testid={`toc-link-${node.id}`}
+        data-target={node.id}
+      >
+        <span className="spy-label toc-text" dir="auto">
+          {node.text}
+        </span>
+        <span className="spy-marker toc-bullet" aria-hidden="true" />
+      </a>
+
+      {node.children && node.children.length > 0 && (
+        <ul className="toc-sublist" role="list">
+          {node.children.map(renderNode)}
         </ul>
       )}
-    </nav>
+    </li>
   );
+};
+
+return (
+  <nav
+    ref={railRef}
+    className={`scrollspy-rail toc-sidebar toc-${position} ${!isOpen ? 'hidden' : ''} ${className}`.trim()}
+    aria-label="Table of Contents"
+    data-testid="toc-sidebar"
+    data-position={position}
+    dir={position === 'right' ? 'rtl' : 'ltr'}
+  >
+    {onClose && (
+      <button
+        type="button"
+        className="toc-close-btn"
+        onClick={onClose}
+        aria-label="Close Table of Contents"
+        data-testid="toc-close-button"
+        style={{
+          position: 'absolute',
+          width: '1px',
+          height: '1px',
+          padding: 0,
+          margin: '-1px',
+          overflow: 'hidden',
+          clip: 'rect(0, 0, 0, 0)',
+          whiteSpace: 'nowrap',
+          borderWidth: 0,
+        }}
+      >
+        Close
+      </button>
+    )}
+    {hasHeadings && counterText && (
+      <div className="toc-counter" dir="ltr" data-testid="toc-counter">
+        {counterText}
+      </div>
+    )}
+    {!hasHeadings ? (
+      <div className="toc-empty" data-testid="toc-empty" style={{ display: 'none' }}>
+        No headings found in document.
+      </div>
+    ) : (
+      <ul className="toc-list" role="list" data-testid="toc-list">
+        {effectiveTree.map(renderNode)}
+      </ul>
+    )}
+  </nav>
+);
 };

@@ -278,6 +278,7 @@ body.focus-mode .toc-sidebar {
 }
 
 @media (max-width: 1240px) {
+
   .scrollspy-rail,
   .toc-sidebar {
     display: none !important;
