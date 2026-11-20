@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { isEditableElement } from '../shell/useKeyboardShortcuts';
 
 export const MIN_ZOOM = 50;   // 50%
 export const MAX_ZOOM = 250;  // 250%
@@ -144,6 +145,8 @@ export function useZoom(options: UseZoomOptions = {}) {
     if (!enableShortcuts) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.defaultPrevented) return;
+      if (isEditableElement(e.target)) return;
       controller.handleKeyDown(e);
     };
 

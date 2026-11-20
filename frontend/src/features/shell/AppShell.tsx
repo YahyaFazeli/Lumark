@@ -9,6 +9,7 @@ import { TabItem } from '../tabs/types';
 import { TabErrorBoundary } from '../errors';
 import { useTheme } from '../viewport/themeStore';
 import { Icon } from '../../components/Icon';
+import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 import './shell.css';
 
 export interface AppShellProps {
@@ -148,14 +149,85 @@ export const AppShell: React.FC<AppShellProps> = ({
     };
   }, [isMenuOpen]);
 
-  // Global shortcuts
-  useEffect(() => {
-    const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'h' || e.key === 'H')) {
-        e.preventDefault();
+  // Global shortcuts using robust useKeyboardShortcuts hook
+  useKeyboardShortcuts([
+    {
+      key: 'w',
+      ctrlOrMeta: true,
+      allowInEditable: true,
+      description: 'Close active tab',
+      handler: () => {
+        if (state.activeTabId) {
+          actions.closeTab(state.activeTabId);
+        }
+      },
+    },
+    {
+      key: 't',
+      ctrlOrMeta: true,
+      shift: false,
+      allowInEditable: true,
+      description: 'New tab / Open file in new tab',
+      handler: () => {
+        onOpenFile?.();
+      },
+    },
+    {
+      key: 'n',
+      ctrlOrMeta: true,
+      shift: false,
+      allowInEditable: true,
+      description: 'New tab / Open file (alias)',
+      handler: () => {
+        onOpenFile?.();
+      },
+    },
+    {
+      key: 'o',
+      ctrlOrMeta: true,
+      shift: false,
+      allowInEditable: true,
+      description: 'Open file dialog',
+      handler: () => {
+        onOpenFile?.();
+      },
+    },
+    {
+      key: 'p',
+      ctrlOrMeta: true,
+      shift: false,
+      allowInEditable: true,
+      description: 'Print document',
+      handler: () => {
+        onPrint?.();
+      },
+    },
+    {
+      key: 's',
+      ctrlOrMeta: true,
+      allowInEditable: true,
+      description: 'Save document (prevent browser save-as dialog)',
+      handler: () => {
+        // Prevent default browser "Save Page As" in desktop app
+      },
+    },
+    {
+      key: 'h',
+      ctrlOrMeta: true,
+      // shift not specified to allow both Ctrl+H and Ctrl+Shift+H
+      allowInEditable: false,
+      description: 'Navigate to Home / Empty State',
+      handler: () => {
         handleNavigateHome();
-      } else if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === 'r' || e.key === 'R')) {
-        e.preventDefault();
+      },
+    },
+    {
+      key: 'r',
+      ctrlOrMeta: true,
+      shift: false,
+      allowInEditable: false,
+      description: 'Toggle Recent Files menu',
+      handler: () => {
         if (isMenuOpenRef.current && isRecentsSubmenuOpenRef.current) {
           setIsMenuOpen(false);
           setIsRecentsSubmenuOpen(false);
@@ -163,26 +235,29 @@ export const AppShell: React.FC<AppShellProps> = ({
           setIsMenuOpen(true);
           setIsRecentsSubmenuOpen(true);
         }
-      } else if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === 'o' || e.key === 'O')) {
-        e.preventDefault();
-        onOpenFile?.();
-      } else if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === 'p' || e.key === 'P')) {
-        e.preventDefault();
-        onPrint?.();
-      } else if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === ',') {
-        e.preventDefault();
+      },
+    },
+    {
+      key: [',', 'Comma'],
+      ctrlOrMeta: true,
+      shift: false,
+      allowInEditable: false,
+      description: 'Open Settings modal',
+      handler: () => {
         onOpenSettings?.();
-      } else if (e.key === 'Escape' && document.body.classList.contains('focus-mode')) {
-        e.preventDefault();
-        exitFocusMode();
-      }
-    };
-
-    window.addEventListener('keydown', handleGlobalKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleGlobalKeyDown);
-    };
-  }, [onOpenFile, onPrint, onOpenSettings, handleNavigateHome]);
+      },
+    },
+    {
+      key: 'Escape',
+      allowInEditable: false,
+      description: 'Exit focus mode',
+      handler: () => {
+        if (document.body.classList.contains('focus-mode')) {
+          exitFocusMode();
+        }
+      },
+    },
+  ]);
 
   const hasTabs = state.tabs.length > 0;
 

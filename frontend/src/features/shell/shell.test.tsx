@@ -138,6 +138,45 @@ describe('AppShell Integration & Component Tests (US-007.4)', () => {
     expect(handleOpenFile).toHaveBeenCalledTimes(2);
   });
 
+  it('handles global Ctrl+W and Cmd+W to close active tab', () => {
+    render(<AppShell store={store} />);
+
+    act(() => {
+      store.openTab({ filePath: '/tab1.md', filename: 'tab1.md', content: 'Doc 1' });
+      store.openTab({ filePath: '/tab2.md', filename: 'tab2.md', content: 'Doc 2' });
+    });
+
+    expect(screen.getAllByRole('tab')).toHaveLength(2);
+    expect(store.getState().activeTabId).toBeDefined();
+
+    // Trigger Ctrl+W to close tab 2
+    fireEvent.keyDown(window, { key: 'w', ctrlKey: true });
+    expect(screen.getAllByRole('tab')).toHaveLength(1);
+    expect(screen.getByRole('heading', { level: 1, name: 'tab1.md' })).toBeInTheDocument();
+
+    // Trigger Cmd+W to close tab 1 (last remaining tab)
+    fireEvent.keyDown(window, { key: 'w', metaKey: true });
+    expect(screen.queryByRole('tablist')).toBeNull();
+    expect(screen.getByRole('heading', { level: 2, name: /open document/i })).toBeInTheDocument();
+  });
+
+  it('handles global Ctrl+T and Ctrl+N to trigger new tab (onOpenFile)', () => {
+    const handleOpenFile = vi.fn();
+    render(<AppShell store={store} onOpenFile={handleOpenFile} />);
+
+    // Ctrl+T
+    fireEvent.keyDown(window, { key: 't', ctrlKey: true });
+    expect(handleOpenFile).toHaveBeenCalledTimes(1);
+
+    // Cmd+T
+    fireEvent.keyDown(window, { key: 'T', metaKey: true });
+    expect(handleOpenFile).toHaveBeenCalledTimes(2);
+
+    // Ctrl+N (new tab alias)
+    fireEvent.keyDown(window, { key: 'n', ctrlKey: true });
+    expect(handleOpenFile).toHaveBeenCalledTimes(3);
+  });
+
   it('renders appBrand as a clickable Home button that triggers Home/Empty State view', () => {
     const handleNavigateHome = vi.fn();
     const { container } = render(

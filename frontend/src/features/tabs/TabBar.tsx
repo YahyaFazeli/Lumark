@@ -211,7 +211,7 @@ export const TabBar: React.FC<TabBarProps> = ({
     } else if (e.key === 'End') {
       e.preventDefault();
       selectAndFocusTab(tabs[tabs.length - 1].id);
-    } else if ((e.ctrlKey || e.metaKey) && (e.key === 'w' || e.key === 'W')) {
+    } else if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'w' || e.code === 'KeyW')) {
       e.preventDefault();
       if (activeTabId) {
         onCloseTab(activeTabId);
@@ -222,9 +222,12 @@ export const TabBar: React.FC<TabBarProps> = ({
   // Listen to window-level Ctrl/Cmd+W shortcut to close active tab
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'w' || e.key === 'W')) {
+      if (e.defaultPrevented) return;
+      const isCmdOrCtrl = e.ctrlKey || e.metaKey;
+      const isW = e.key.toLowerCase() === 'w' || e.code === 'KeyW';
+      if (isCmdOrCtrl && isW) {
+        e.preventDefault();
         if (activeTabId) {
-          e.preventDefault();
           onCloseTab(activeTabId);
         }
       }
@@ -366,8 +369,8 @@ export const TabBar: React.FC<TabBarProps> = ({
             className="tab-icon-btn tab-add-btn"
             id="addTabBtn"
             onClick={onOpenFile}
-            title="Open File (Ctrl+O)"
-            aria-label="Open File"
+            title="New Tab (Ctrl+T) / Open File (Ctrl+O)"
+            aria-label="New Tab / Open File"
             data-testid="tab-add-btn"
           >
             <Icon name="plus" size={14} strokeWidth={2.2} />

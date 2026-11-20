@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { isEditableElement } from '../shell/useKeyboardShortcuts';
 
 export interface UseTocToggleOptions {
   initialOpen?: boolean;
@@ -46,6 +47,7 @@ export function useTocToggle(options: UseTocToggleOptions = {}) {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.defaultPrevented || isEditableElement(e.target)) return;
       // Shortcut: Ctrl+L / Cmd+L / Alt+T
       const isCmdOrCtrl = e.ctrlKey || e.metaKey;
       const isToggleKey =
