@@ -448,7 +448,7 @@ jobs:
           | :--- | :--- | :--- | :--- | :--- |
           | **Windows** | x64 (64-bit) | NSIS Installer | `${{ needs.prepare.outputs.windows_installer }}` | Standard installer with file associations |
           | **macOS** | Universal (arm64 + x64) | Disk Image | `${{ needs.prepare.outputs.macos_dmg }}` | Branded DMG with drag-and-drop to Applications |
-          | **macOS** | Universal (arm64 + x64) | Zip Archive | `${{ needs.prepare.outputs.macos_zip }}` | Portable zipped `.app` bundle |
+          | **macOS** | Universal (arm64 + x64) | Zip Archive | `${{ needs.prepare.outputs.macos_zip }}` | Portable zipped application bundle |
           | **Linux** | x86_64 / amd64 | AppImage | `${{ needs.prepare.outputs.linux_appimage }}` | Standalone executable (`chmod +x` & run) |
           | **Linux** | x86_64 / amd64 | Debian / Ubuntu | `${{ needs.prepare.outputs.linux_deb }}` | Debian package (`sudo apt install ./...deb`) |
           | **Linux** | x86_64 / amd64 | RPM (Fedora/RHEL) | `${{ needs.prepare.outputs.linux_rpm }}` | RPM package (`sudo dnf install ./...rpm`) |
@@ -552,7 +552,7 @@ jobs:
             exit 1
           fi
 
-          TABLE_FILES=$(grep -E '^\|.*\|.*\|.*\| `.*` \|' "$RELEASE_BODY" | sed -E 's/.*`([^`]+)`.*/\1/')
+          TABLE_FILES=$(awk -F'|' '/^\|/ { val = $5; gsub(/^[[:space:]]+|[[:space:]]+$/, "", val); if (val ~ /^`[^`]+`$/) { gsub(/^`|`$/, "", val); print val } }' "$RELEASE_BODY")
           if [ -z "$TABLE_FILES" ]; then
             echo "ERROR: No asset filenames found in release body table!" >&2
             exit 1

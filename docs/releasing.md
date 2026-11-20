@@ -57,7 +57,7 @@ Every production release builds and publishes the following standardized assets:
 | :--- | :--- | :--- | :--- | :--- |
 | **Windows** | x64 (AMD64) | NSIS Installer | `lumark_<version>_windows_amd64_setup.exe` | Standard Windows installer with file associations |
 | **macOS** | Universal (arm64 + x64) | Apple Disk Image | `lumark_<version>_macos_universal.dmg` | Branded drag-and-drop DMG installer |
-| **macOS** | Universal (arm64 + x64) | Zip Archive | `lumark_<version>_macos_universal.zip` | Portable zipped `.app` bundle |
+| **macOS** | Universal (arm64 + x64) | Zip Archive | `lumark_<version>_macos_universal.zip` | Portable zipped application bundle |
 | **Linux** | x86_64 / amd64 | AppImage | `lumark_<version>_linux_amd64.AppImage` | Standalone executable (`chmod +x` & run) |
 | **Linux** | x86_64 / amd64 | Debian Package | `lumark_<version>-1_amd64.deb` | Debian / Ubuntu installer (`apt install`) |
 | **Linux** | x86_64 / amd64 | RPM Package | `lumark-<version>-1.x86_64.rpm` | Fedora / RHEL installer (`dnf install`) |
