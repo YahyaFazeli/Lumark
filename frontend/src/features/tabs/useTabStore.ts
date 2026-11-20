@@ -35,6 +35,7 @@ export function useTabActions(store: TabStore = defaultStore) {
   return useMemo(
     () => ({
       openTab: store.openTab,
+      restoreTab: store.restoreTab,
       closeTab: store.closeTab,
       switchTab: store.switchTab,
       focusExistingTab: store.focusExistingTab,

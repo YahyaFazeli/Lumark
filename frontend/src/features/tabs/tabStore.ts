@@ -45,8 +45,12 @@ export class TabStore {
   /**
    * Opens a new tab or focuses an existing one if the file is already open.
    * Duplicate paths are detected and focused without altering tab order.
+   *
+   * @param options Details of the tab to open
+   * @param setActive Whether to set the tab as active (default: true). If false, appends without modifying activeTabId.
    */
-  public openTab = (options: OpenTabOptions): TabItem => {
+  public openTab = (options: OpenTabOptions, setActive: boolean = true): TabItem => {
+    const shouldSetActive = options.setActive !== undefined ? options.setActive : setActive;
     const normalizedFilePath = normalizePath(options.filePath);
 
     // 1. Check if already open
@@ -67,7 +71,7 @@ export class TabStore {
 
       this.state = {
         tabs: newTabs,
-        activeTabId: existingTab.id,
+        activeTabId: shouldSetActive ? existingTab.id : this.state.activeTabId,
       };
       this.notify();
       return updatedTab;
@@ -98,14 +102,20 @@ export class TabStore {
     nextTabs.push(newTab);
     const newTabs = disambiguateTitles(nextTabs);
 
-    // Immediately set the active tab to the new tab's ID
     this.state = {
       tabs: newTabs,
-      activeTabId: newTab.id,
+      activeTabId: shouldSetActive ? newTab.id : this.state.activeTabId,
     };
 
     this.notify();
     return newTabs.find((t) => t.id === tabId) || newTab;
+  };
+
+  /**
+   * Restores a tab by appending it to the tab list without modifying activeTabId.
+   */
+  public restoreTab = (options: OpenTabOptions): TabItem => {
+    return this.openTab(options, false);
   };
 
   /**

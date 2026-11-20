@@ -86,6 +86,40 @@ describe('TabStateStore (US-007.1)', () => {
     expect(store.getActiveTab()?.id).toBe(osTab.id);
   });
 
+  it('restores tabs with setActive=false or restoreTab without changing activeTabId', () => {
+    expect(store.getState().activeTabId).toBeNull();
+
+    // 1. Restore tab 1 with setActive parameter = false
+    const tab1 = store.openTab({ filePath: '/prev/doc1.md', content: 'Prev 1' }, false);
+    expect(store.getState().tabs).toHaveLength(1);
+    expect(store.getState().activeTabId).toBeNull();
+
+    // 2. Restore tab 2 with restoreTab helper
+    const tab2 = store.restoreTab({ filePath: '/prev/doc2.md', content: 'Prev 2' });
+    expect(store.getState().tabs).toHaveLength(2);
+    expect(store.getState().activeTabId).toBeNull();
+
+    // 3. Restore tab 3 with options.setActive = false
+    const tab3 = store.openTab({ filePath: '/prev/doc3.md', content: 'Prev 3', setActive: false });
+    expect(store.getState().tabs).toHaveLength(3);
+    expect(store.getState().activeTabId).toBeNull();
+
+    // 4. Now open OS file with default setActive = true
+    const osTab = store.openTab({ filePath: '/os/architecture.md', content: 'Architecture' });
+    const finalState = store.getState();
+
+    // Architecture is appended at the END of the tab list
+    expect(finalState.tabs).toHaveLength(4);
+    expect(finalState.tabs[0].id).toBe(tab1.id);
+    expect(finalState.tabs[1].id).toBe(tab2.id);
+    expect(finalState.tabs[2].id).toBe(tab3.id);
+    expect(finalState.tabs[3].id).toBe(osTab.id);
+
+    // Architecture is active
+    expect(finalState.activeTabId).toBe(osTab.id);
+    expect(store.getActiveTab()?.id).toBe(osTab.id);
+  });
+
   it('prevents duplicate tabs and focuses existing tab without altering order', () => {
     const tab1 = store.openTab({ filePath: '/docs/intro.md', content: 'Intro' });
     const tab2 = store.openTab({ filePath: '/docs/setup.md', content: 'Setup' });

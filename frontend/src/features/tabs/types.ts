@@ -29,4 +29,5 @@ export interface OpenTabOptions {
   lastModified?: string | number;
   fileSizeBytes?: number;
   isReadOnly?: boolean;
+  setActive?: boolean;
 }

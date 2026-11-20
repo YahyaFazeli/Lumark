@@ -1,10 +1,16 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createTabStore } from './tabStore';
 import { restoreTabsOnStartup, saveOpenTabsToSettings, DocumentLoader } from './tabRestore';
 import { SettingsStore, InMemorySettingsAdapter } from '../preferences/settingsStore';
 import { AppSettings, DEFAULT_APP_SETTINGS } from '../preferences/types';
 
 describe('Tab Restoration Logic (US-026.3)', () => {
+  beforeEach(() => {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.clear();
+    }
+  });
+
   it('restores all persisted tabs in order when restoreOpenTabs is true', async () => {
     const tabStore = createTabStore();
     const initialSettings: AppSettings = {
@@ -174,5 +180,42 @@ describe('Tab Restoration Logic (US-026.3)', () => {
 
     // The initial tab remains the active tab, not overridden by the last restored tab
     expect(tabStore.getState().activeTabId).toBe(initialTab.id);
+  });
+
+  it('restores tabs without setting any of them active (activeTabId remains null / Home state)', async () => {
+    const tabStore = createTabStore();
+    expect(tabStore.getState().activeTabId).toBeNull();
+
+    const activeTabHistory: Array<string | null> = [];
+    tabStore.subscribe(() => {
+      activeTabHistory.push(tabStore.getState().activeTabId);
+    });
+
+    const initialSettings: AppSettings = {
+      ...DEFAULT_APP_SETTINGS,
+      restoreOpenTabs: true,
+      openTabs: ['/docs/first.md', '/docs/second.md', '/docs/third.md'],
+    };
+    const settingsStore = new SettingsStore(new InMemorySettingsAdapter(initialSettings));
+    await settingsStore.load();
+
+    const mockLoader: DocumentLoader = vi.fn().mockImplementation(async (path: string) => ({
+      filePath: path,
+      filename: path.split('/').pop() || 'doc.md',
+      content: `# Content for ${path}`,
+    }));
+
+    const result = await restoreTabsOnStartup({
+      tabStore,
+      settingsStore,
+      docLoader: mockLoader,
+    });
+
+    expect(result.restoredCount).toBe(3);
+    expect(tabStore.getState().tabs).toHaveLength(3);
+    // activeTabId must have remained null across all notifications, preventing tab flickering
+    expect(tabStore.getState().activeTabId).toBeNull();
+    expect(activeTabHistory.every((id) => id === null)).toBe(true);
+    expect(tabStore.getActiveTab()).toBeNull();
   });
 });

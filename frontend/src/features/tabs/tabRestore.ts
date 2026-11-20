@@ -41,6 +41,7 @@ export async function saveOpenTabsToSettings(
 /**
  * Reopens previously active tabs on startup if `restoreOpenTabs` is enabled in preferences.
  * Missing files are restored with status 'missing' without crashing.
+ * All restored tabs are appended without activating any tab, leaving activeTabId untouched.
  */
 export async function restoreTabsOnStartup(
   options: RestoreTabsOptions
@@ -57,7 +58,6 @@ export async function restoreTabsOnStartup(
     return { restoredCount: 0, restoredPaths: [], failedPaths: [] };
   }
 
-  const initialActiveId = options.tabStore.getState().activeTabId;
   const restoredPaths: string[] = [];
   const failedPaths: string[] = [];
 
@@ -72,7 +72,7 @@ export async function restoreTabsOnStartup(
         parentDir: doc.dir,
         content: doc.content,
         status: 'ready',
-      });
+      }, false);
       restoredPaths.push(filePath);
     } catch (err) {
       console.warn(`Failed to restore tab for ${filePath} on startup:`, err);
@@ -84,14 +84,9 @@ export async function restoreTabsOnStartup(
         content: '',
         status: 'missing',
         errorMessage: 'File not found on disk or could not be opened.',
-      });
+      }, false);
       failedPaths.push(filePath);
     }
-  }
-
-  // Preserve previously active tab focus if a file was already loaded prior to restoration
-  if (initialActiveId && options.tabStore.getState().tabs.some((t) => t.id === initialActiveId)) {
-    options.tabStore.switchTab(initialActiveId);
   }
 
   return {

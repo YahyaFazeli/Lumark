@@ -140,6 +140,11 @@ export function App() {
     window.addEventListener('contextmenu', handleGlobalContextMenu);
 
     // 0. Sequential startup: load recents & preferences, restore tabs, then load initial CLI document
+    let startupResolve: () => void;
+    const startupPromise = new Promise<void>((resolve) => {
+      startupResolve = resolve;
+    });
+
     const initializeStartup = async () => {
       try {
         await recentsStore.load();
@@ -149,7 +154,7 @@ export function App() {
 
       try {
         await settingsStore.load();
-        // Restore previously open tabs if configured
+        // Step 1: Restore previously open tabs into the store without setting any active (activeTabId remains null / Home)
         await restoreTabsOnStartup({
           tabStore,
           settingsStore,
@@ -167,17 +172,17 @@ export function App() {
         console.warn('Failed to load persisted settings or restore tabs on startup:', err);
       }
 
-      // 1. Initial check for document loaded via CLI argument in Go backend (appended at end & focused)
+      // Steps 2 & 3: Check for initial document loaded via OS / CLI argument, append to END of tab list, and set active
       try {
         const current = await SpikeDocumentService.GetCurrentDocument();
-        if (current && current.content) {
+        if (current && (current.filePath || current.content)) {
           const tab = tabStore.openTab({
             filePath: current.filePath,
             filename: current.filename,
             parentDir: current.dir,
             content: current.content,
             status: 'ready',
-          });
+          }, true);
           if (tab && tab.id) {
             tabStore.switchTab(tab.id);
           }
@@ -185,14 +190,22 @@ export function App() {
         }
       } catch (err) {
         console.warn('GetCurrentDocument returned empty or failed:', err);
+      } finally {
+        startupResolve();
       }
     };
 
     initializeStartup();
 
-    // Automatically persist open tab paths whenever tabs change
+    // Automatically persist open tab paths whenever tabs change (after startup restoration is complete)
+    let isStartupComplete = false;
+    startupPromise.then(() => {
+      isStartupComplete = true;
+    });
+
     let saveTabsTimer: ReturnType<typeof setTimeout> | undefined;
     const unsubscribeTabs = tabStore.subscribe(() => {
+      if (!isStartupComplete) return;
       clearTimeout(saveTabsTimer);
       saveTabsTimer = setTimeout(() => {
         saveOpenTabsToSettings(tabStore, settingsStore).catch((err) => {
@@ -228,8 +241,9 @@ export function App() {
     syncWindowTitle();
     const unsubscribeTitle = tabStore.subscribe(syncWindowTitle);
 
-    // 2. Listen for document open events from secondary instances
-    Events.On('document:open', (eventData: any) => {
+    // 2. Listen for document open events from secondary instances or OS file associations
+    Events.On('document:open', async (eventData: any) => {
+      await startupPromise;
       const data = eventData?.data;
       if (data) {
         const tab = tabStore.openTab({
@@ -238,7 +252,7 @@ export function App() {
           parentDir: data.dir,
           content: data.content,
           status: 'ready',
-        });
+        }, true);
         if (tab && tab.id) {
           tabStore.switchTab(tab.id);
         }
@@ -247,7 +261,8 @@ export function App() {
       }
     });
 
-    Events.On('file:open', (pathData: any) => {
+    Events.On('file:open', async (pathData: any) => {
+      await startupPromise;
       const p = typeof pathData === 'string' ? pathData : pathData?.data;
       if (typeof p === 'string' && p.trim()) {
         loadDocumentPath(p.trim());
