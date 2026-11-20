@@ -33,6 +33,9 @@ import (
 //go:embed all:frontend/dist
 var frontendAssets embed.FS
 
+//go:embed build/appicon.png
+var appIcon []byte
+
 func init() {
 	// Register custom events for frontend bindings
 	application.RegisterEvent[string]("time")
@@ -181,6 +184,7 @@ func main() {
 	app = application.New(application.Options{
 		Name:        "Lumark",
 		Description: "Lumark - Fast, Cross-Platform Desktop Markdown Reader",
+		Icon:        appIcon,
 		Services: []application.Service{
 			application.NewService(&GreetService{}),
 			application.NewService(docService),

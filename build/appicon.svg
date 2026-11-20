@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 711 711" width="256" height="256">
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#141b3a"/>
+      <stop offset="100%" stop-color="#090e20"/>
+    </linearGradient>
+    <linearGradient id="blade-upper" x1="0.18" y1="1" x2="0.88" y2="0">
+      <stop offset="0%" stop-color="#22c8e9"/>
+      <stop offset="52%" stop-color="#478df8"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <linearGradient id="blade-lower" x1="0.18" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#22c8e9"/>
+      <stop offset="55%" stop-color="#478df8"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded-square app tile -->
+  <rect x="1" y="1" width="709" height="709" rx="159"
+        fill="url(#background)"/>
+
+  <!-- Upper blade -->
+  <path d="M 458 144
+           H 380
+           C 301 144, 238 201, 221 283
+           L 191 481
+           C 248 420, 322 384, 417 369
+           Z"
+        fill="url(#blade-upper)"/>
+
+  <!-- Lower blade -->
+  <path d="M 553 391
+           H 424
+           C 337 399, 246 454, 192 514
+           C 178 530, 166 548, 158 565
+           C 211 529, 262 505, 313 504
+           H 408
+           C 474 499, 530 454, 553 391
+           Z"
+        fill="url(#blade-lower)"/>
+</svg>
