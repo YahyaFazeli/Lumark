@@ -5,7 +5,8 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BUILD_BIN="${ROOT_DIR}/build/bin"
-DEB_PACKAGE="${BUILD_BIN}/lumark_0.1.0-1_amd64.deb"
+DEB_PACKAGE="${BUILD_BIN}/lumark_0.1.0_linux_amd64.deb"
+LEGACY_DEB="${BUILD_BIN}/lumark_0.1.0-1_amd64.deb"
 CANONICAL_DEB="${BUILD_BIN}/lumark.deb"
 TEST_EXTRACT_DIR="${ROOT_DIR}/build/staging/deb-verification-test"
 
@@ -14,13 +15,15 @@ echo "Lumark - Linux Package Verification Suite"
 echo "================================================================="
 
 # 1. Ensure Debian package is built
-if [ ! -f "${DEB_PACKAGE}" ] && [ ! -f "${CANONICAL_DEB}" ]; then
+if [ ! -f "${DEB_PACKAGE}" ] && [ ! -f "${LEGACY_DEB}" ] && [ ! -f "${CANONICAL_DEB}" ]; then
 	echo "[Package Build] Building Debian package via ./packaging/linux/build-deb.sh..."
 	"${ROOT_DIR}/packaging/linux/build-deb.sh"
 fi
 
 TARGET_DEB="${DEB_PACKAGE}"
-if [ ! -f "${TARGET_DEB}" ] && [ -f "${CANONICAL_DEB}" ]; then
+if [ ! -f "${TARGET_DEB}" ] && [ -f "${LEGACY_DEB}" ]; then
+	TARGET_DEB="${LEGACY_DEB}"
+elif [ ! -f "${TARGET_DEB}" ] && [ -f "${CANONICAL_DEB}" ]; then
 	TARGET_DEB="${CANONICAL_DEB}"
 fi
 

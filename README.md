@@ -39,9 +39,9 @@ Grab the latest installer or portable package from the [Releases page](https://g
 | **Windows** | x64 (AMD64) | `lumark_*_windows_amd64_setup.exe` | NSIS installer |
 | **macOS** | Universal (Apple Silicon & Intel) | `lumark_*_macos_universal.dmg` | Disk image installer |
 | **macOS** | Universal (Apple Silicon & Intel) | `lumark_*_macos_universal.zip` | Portable application archive |
-| **Linux** | x64 (AMD64) | `lumark_*_amd64.deb` | Debian / Ubuntu package |
+| **Linux** | x64 (AMD64) | `lumark_*_linux_amd64.deb` | Debian / Ubuntu package |
 | **Linux** | x64 (AMD64) | `lumark_*_linux_amd64.AppImage` | Standalone portable executable |
-| **Linux** | x64 (AMD64) | `lumark-*.x86_64.rpm` | Fedora / RHEL package |
+| **Linux** | x64 (AMD64) | `lumark_*_linux_amd64.rpm` | Fedora / RHEL package |
 | **Linux** | x64 (AMD64) | `lumark_*_linux_amd64.tar.gz` | Portable standalone binary archive |
 
 ## Installation
@@ -61,7 +61,7 @@ Grab the latest installer or portable package from the [Releases page](https://g
 ### Linux
 - **Debian / Ubuntu:**
   ```bash
-  sudo apt install ./lumark_*_amd64.deb
+  sudo apt install ./lumark_*_linux_amd64.deb
   ```
 - **AppImage (Standalone):**
   ```bash
@@ -71,7 +71,7 @@ Grab the latest installer or portable package from the [Releases page](https://g
   *(Note: Ubuntu 24.04+ requires `libfuse2t64` to launch AppImages: `sudo apt install libfuse2t64`)*
 - **Fedora / RHEL:**
   ```bash
-  sudo dnf install ./lumark-*.x86_64.rpm
+  sudo dnf install ./lumark_*_linux_amd64.rpm
   ```
 
 ### Verifying Downloads

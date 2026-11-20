@@ -52,8 +52,8 @@ jobs:
           MAC_ZIP="${BASE_NAME}_macos_universal.zip"
           LINUX_APPIMAGE="${BASE_NAME}_linux_amd64.AppImage"
           LINUX_TAR="${BASE_NAME}_linux_amd64.tar.gz"
-          LINUX_DEB="${BASE_NAME}-1_amd64.deb"
-          LINUX_RPM="lumark-${VERSION}-1.x86_64.rpm"
+          LINUX_DEB="${BASE_NAME}_linux_amd64.deb"
+          LINUX_RPM="${BASE_NAME}_linux_amd64.rpm"
 
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "base_name=${BASE_NAME}" >> "$GITHUB_OUTPUT"

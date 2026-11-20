@@ -10,8 +10,9 @@ DEB_REVISION="${DEB_REVISION:-1}"
 DEB_VERSION="${VERSION}-${DEB_REVISION}"
 DEB_ARCH="${DEB_ARCH:-amd64}"
 PACKAGE_NAME="lumark"
-DEB_OUTPUT="${BUILD_DIR}/${PACKAGE_NAME}_${DEB_VERSION}_${DEB_ARCH}.deb"
+DEB_OUTPUT="${BUILD_DIR}/${PACKAGE_NAME}_${VERSION}_linux_${DEB_ARCH}.deb"
 DEB_SYMLINK="${BUILD_DIR}/${PACKAGE_NAME}.deb"
+DEB_LEGACY_SYMLINK="${BUILD_DIR}/${PACKAGE_NAME}_${DEB_VERSION}_${DEB_ARCH}.deb"
 
 mkdir -p "${BUILD_DIR}"
 rm -rf "${STAGING_DIR}"
@@ -88,6 +89,7 @@ fi
 # Build Debian archive using dpkg-deb
 dpkg-deb --build --root-owner-group "${STAGING_DIR}" "${DEB_OUTPUT}"
 cp -pf "${DEB_OUTPUT}" "${DEB_SYMLINK}"
+ln -sf "$(basename "${DEB_OUTPUT}")" "${DEB_LEGACY_SYMLINK}"
 
 echo "Successfully built Debian package: ${DEB_OUTPUT}"
 echo "Canonical package path: ${DEB_SYMLINK}"

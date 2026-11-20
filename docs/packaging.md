@@ -197,13 +197,13 @@ Debian package maintainer scripts (`packaging/linux/debian/`):
 npm run build:deb
 ```
 Outputs:
-- Versioned: `build/bin/lumark_0.1.0-1_amd64.deb`
+- Versioned: `build/bin/lumark_0.1.0_linux_amd64.deb`
 - Canonical: `build/bin/lumark.deb`
 
 #### Step 4.2: Inspect Package Metadata & File Tree
 ```bash
-dpkg-deb -I build/bin/lumark_0.1.0-1_amd64.deb
-dpkg-deb -c build/bin/lumark_0.1.0-1_amd64.deb
+dpkg-deb -I build/bin/lumark_0.1.0_linux_amd64.deb
+dpkg-deb -c build/bin/lumark_0.1.0_linux_amd64.deb
 ```
 
 #### Step 4.3: Build AppImage Pipeline
@@ -232,6 +232,6 @@ All release assets published to GitHub Releases strictly adhere to the following
 | **macOS Universal** | Zip Archive | `lumark_<version>_macos_universal.zip` |
 | **Linux x86_64** | FreeDesktop AppImage | `lumark_<version>_linux_amd64.AppImage` |
 | **Linux x86_64** | Standalone Tarball | `lumark_<version>_linux_amd64.tar.gz` |
-| **Linux x86_64** | Debian Package | `lumark_<version>-1_amd64.deb` |
-| **Linux x86_64** | RPM Package | `lumark-<version>-1.x86_64.rpm` |
+| **Linux x86_64** | Debian Package | `lumark_<version>_linux_amd64.deb` |
+| **Linux x86_64** | RPM Package | `lumark_<version>_linux_amd64.rpm` |
 | **All Platforms** | SHA-256 Checksums | `SHA256SUMS.txt` |
