@@ -363,7 +363,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
   }, [activePref, rawMarkdown]);
 
   const resolvedTocPosition: 'left' | 'right' = React.useMemo(() => {
-    const pos = settings.tocPosition ?? 'left';
+    const pos = settings.tocPosition ?? 'auto';
     if (pos === 'left') return 'left';
     if (pos === 'right') return 'right';
     return docDir === 'rtl' ? 'right' : 'left';

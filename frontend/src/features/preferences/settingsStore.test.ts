@@ -12,10 +12,10 @@ describe('SettingsStore tocPosition setting', () => {
     store = new SettingsStore(adapter);
   });
 
-  it('defaults tocPosition to left', () => {
-    expect(DEFAULT_APP_SETTINGS.tocPosition).toBe('left');
+  it('defaults tocPosition to auto', () => {
+    expect(DEFAULT_APP_SETTINGS.tocPosition).toBe('auto');
     const settings = store.getSettings();
-    expect(settings.tocPosition).toBe('left');
+    expect(settings.tocPosition).toBe('auto');
   });
 
   it('updates tocPosition to right and auto and notifies listeners', async () => {
@@ -35,12 +35,12 @@ describe('SettingsStore tocPosition setting', () => {
     unsubscribe();
   });
 
-  it('resets tocPosition back to default left upon resetSettings', async () => {
+  it('resets tocPosition back to default auto upon resetSettings', async () => {
     await store.updateSettings({ tocPosition: 'right' });
     expect(store.getSettings().tocPosition).toBe('right');
 
     await store.resetSettings();
-    expect(store.getSettings().tocPosition).toBe('left');
+    expect(store.getSettings().tocPosition).toBe('auto');
   });
 
   it('initializes tocPosition from adapter stored settings', async () => {

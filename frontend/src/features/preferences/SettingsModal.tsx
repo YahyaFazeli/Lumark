@@ -245,9 +245,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               style={{ display: 'none' }}
               aria-hidden="true"
             >
-              <option value="left">Left (Default)</option>
+              <option value="left">Left</option>
               <option value="right">Right</option>
-              <option value="auto">Auto (LTR: Left, RTL: Right)</option>
+              <option value="auto">Auto (Default: LTR Left, RTL Right)</option>
             </select>
           </div>
 

@@ -28,5 +28,5 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   maxRecentFiles: 10,
   showToc: true,
   showTableOfContents: true,
-  tocPosition: 'left',
+  tocPosition: 'auto',
 };

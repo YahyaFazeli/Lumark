@@ -343,7 +343,7 @@ console.log('No headings here');
     expect(mockContainer.scrollTop).toBe(350);
   });
 
-  it('Sticky Counter: has sticky positioning, top: 0, blended transparent background with backdrop blur, and z-index: 10', async () => {
+  it('Sticky Counter: has sticky positioning, top: 0, opaque canvas background matching app background, and z-index: 10', async () => {
     const fs = await import('fs');
     const path = await import('path');
     const cssContent = fs.readFileSync(path.resolve(__dirname, 'toc.css'), 'utf-8');
@@ -351,8 +351,8 @@ console.log('No headings here');
     // Verify .toc-counter sticky style rules
     expect(cssContent).toMatch(/\.toc-counter\s*\{[^}]*position:\s*sticky;/);
     expect(cssContent).toMatch(/\.toc-counter\s*\{[^}]*top:\s*0;/);
-    expect(cssContent).toMatch(/\.toc-counter\s*\{[^}]*backdrop-filter:\s*blur\(8px\);/);
+    expect(cssContent).toMatch(/\.toc-counter\s*\{[^}]*background:\s*var\(--bg-canvas\);/);
     expect(cssContent).toMatch(/\.toc-counter\s*\{[^}]*z-index:\s*10;/);
-    expect(cssContent).not.toMatch(/\.toc-counter\s*\{[^}]*background:\s*var\(--bg-canvas\);/);
+    expect(cssContent).not.toMatch(/\.toc-counter\s*\{[^}]*backdrop-filter/);
   });
 });
