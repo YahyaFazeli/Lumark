@@ -17,6 +17,7 @@ declare module "@wailsio/runtime" {
         interface CustomEvents {
             "document:open": main$0.DocumentData;
             "file:changed": watcher$0.FileChangeEvent;
+            "file:open": string;
             "time": string;
             "wails:file-changed": string;
         }

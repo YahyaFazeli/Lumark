@@ -15,10 +15,17 @@ import { Call as $Call, CancellablePromise as $CancellablePromise } from "@wails
 import * as $models from "./models.js";
 
 /**
- * GetCurrentDocument returns the currently loaded document data.
+ * GetCurrentDocument returns the initial document if present, or the currently loaded document data.
  */
 export function GetCurrentDocument(): $CancellablePromise<$models.DocumentData> {
     return $Call.ByID(1817100390);
+}
+
+/**
+ * GetInitialDocument returns the initial document loaded from command-line arguments on launch.
+ */
+export function GetInitialDocument(): $CancellablePromise<$models.DocumentData> {
+    return $Call.ByID(738332803);
 }
 
 /**
@@ -26,4 +33,12 @@ export function GetCurrentDocument(): $CancellablePromise<$models.DocumentData> 
  */
 export function LoadFile(path: string): $CancellablePromise<$models.DocumentData> {
     return $Call.ByID(817508912, path);
+}
+
+/**
+ * SetInitialDocument records the document opened via CLI arguments or OS launch.
+ * It is preserved across subsequent LoadFile calls during startup.
+ */
+export function SetInitialDocument(doc: $models.DocumentData): $CancellablePromise<void> {
+    return $Call.ByID(1739685223, doc);
 }

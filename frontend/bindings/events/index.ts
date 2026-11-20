@@ -19,6 +19,11 @@ export const DocumentOpen = "document:open";
 export const FileChanged = "file:changed";
 
 /**
+ * Name of the custom event "file:open".
+ */
+export const FileOpen = "file:open";
+
+/**
  * Name of the custom event "time".
  */
 export const Time = "time";
