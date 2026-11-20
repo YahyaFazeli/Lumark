@@ -11,6 +11,10 @@
   --font-sans: 'Inter', 'Vazirmatn', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', 'Vazirmatn', monospace;
   --font-rtl: 'Vazirmatn', 'Lora', serif;
+  --heading-scroll-offset: 80px;
+  --current-zoom: 1;
+  --heading-scroll-offset: 80px;
+  --current-zoom: 1;
 }
 
 :root,
@@ -21,6 +25,10 @@ body.theme-dark,
   --font-sans: 'Inter', 'Vazirmatn', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', 'Vazirmatn', monospace;
   --font-rtl: 'Vazirmatn', 'Lora', serif;
+  --heading-scroll-offset: 80px;
+  --current-zoom: 1;
+  --heading-scroll-offset: 80px;
+  --current-zoom: 1;
 
   --bg-canvas: #1C1B18;
   --bg-modal: #242320;
@@ -110,6 +118,8 @@ body.theme-light,
   --font-sans: 'Inter', 'Vazirmatn', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', 'Vazirmatn', monospace;
   --font-rtl: 'Vazirmatn', 'Lora', serif;
+  --heading-scroll-offset: 80px;
+  --current-zoom: 1;
 
   --bg-canvas: #F7F3EB;
   --bg-modal: #FCFBF8;

@@ -507,7 +507,11 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
       <div
         className="markdown-viewport-body"
         data-testid="markdown-viewport-body"
-        style={{ zoom: zoomFactor }}
+        style={{
+          zoom: zoomFactor,
+          ['--current-zoom' as string]: zoomFactor,
+          ['--md-zoom' as string]: zoomFactor,
+        }}
       >
         <MarkdownContentBody
           ref={contentRef}

@@ -557,6 +557,7 @@ body.focus-mode .markdown-content {
   min-height: 0;
   height: 100%;
   overflow: hidden !important;
+  overflow: clip !important;
   display: flex;
   flex-direction: column;
 }

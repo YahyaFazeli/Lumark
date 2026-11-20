@@ -151,9 +151,12 @@ describe('Theme Design Tokens & WCAG AA Contrast Compliance (US-023.1)', () => {
 
       // Justified allowlist for dynamic runtime variables
       const JUSTIFIED_ALLOWLIST = new Set([
-        '--default-contextmenu', // runtime context menu toggle configured on :root
-        '--shiki-dark',          // dynamically set by Shiki syntax engine
-        '--shiki-light',         // dynamically set by Shiki syntax engine
+        '--default-contextmenu',   // runtime context menu toggle configured on :root
+        '--shiki-dark',            // dynamically set by Shiki syntax engine
+        '--shiki-light',           // dynamically set by Shiki syntax engine
+        '--heading-scroll-offset', // dynamic layout scroll clearance on .markdown-content
+        '--current-zoom',          // dynamic runtime zoom factor set on viewport body
+        '--md-zoom',               // dynamic runtime zoom factor set on viewport body
       ]);
 
       const srcDir = path.resolve(__dirname, '../..');

@@ -41,19 +41,33 @@ export function useScrollSpy(options: UseScrollSpyOptions = {}): {
     if (itemIds && itemIds.length > 0) {
       elements = itemIds
         .map((id) => {
-          let el = document.getElementById(id);
-          if (!el && typeof CSS !== 'undefined') {
-            try {
-              const escaped = CSS.escape(id);
-              el =
-                document.querySelector(`[data-heading-id="${escaped}"]`) ||
-                document.querySelector(`[name="${escaped}"]`);
-            } catch {
-              el = null;
+            let el: HTMLElement | null = null;
+            if (container && typeof CSS !== 'undefined') {
+              try {
+                const escaped = CSS.escape(id);
+                el =
+                container.querySelector<HTMLElement>(`#${escaped}`) ||
+                  container.querySelector<HTMLElement>(`[data-heading-id="${escaped}"]`) ||
+                  container.querySelector<HTMLElement>(`[name="${escaped}"]`);
+              } catch {
+                el = null;
+              }
             }
-          }
-          return el;
-        })
+            if (!el) {
+              el = document.getElementById(id);
+              if (!el && typeof CSS !== 'undefined') {
+                try {
+                  const escaped = CSS.escape(id);
+                  el =
+                    document.querySelector(`[data-heading-id="${escaped}"]`) ||
+                    document.querySelector(`[name="${escaped}"]`);
+                } catch {
+                  el = null;
+                }
+              }
+            }
+            return el;
+          })
         .filter((el): el is HTMLElement => el !== null);
     } else if (container) {
       elements = Array.from(
@@ -91,9 +105,10 @@ export function useScrollSpy(options: UseScrollSpyOptions = {}): {
 
       // If no headings currently intersect (e.g. user scrolled past a section),
       // determine the last heading that is above the threshold
+      const containerTop = container ? container.getBoundingClientRect().top : 0;
       const above = elements.filter((el) => {
         const rect = el.getBoundingClientRect();
-        return rect.top <= 120; // 120px offset from viewport top
+        return (rect.top - containerTop) <= 120; // 120px offset from container top
       });
 
       if (above.length > 0) {

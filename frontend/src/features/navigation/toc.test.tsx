@@ -5,17 +5,7 @@ import { TableOfContents } from './TableOfContents';
 import { extractHeadingsFromMarkdown, buildTocTree } from './tocGenerator';
 
 describe('Table of Contents Acceptance Criteria & Integration Suite (US-021.4)', () => {
-  let scrollIntoViewMock: ReturnType<typeof vi.fn>;
-  let scrollToMock: ReturnType<typeof vi.fn>;
-
   beforeEach(() => {
-    scrollIntoViewMock = vi.fn();
-    window.HTMLElement.prototype.scrollIntoView =
-      scrollIntoViewMock as unknown as typeof Element.prototype.scrollIntoView;
-    scrollToMock = vi.fn();
-    window.HTMLElement.prototype.scrollTo =
-      scrollToMock as unknown as typeof Element.prototype.scrollTo;
-
     // Mock IntersectionObserver
     window.IntersectionObserver = vi.fn(function (this: any) {
       this.observe = vi.fn();
@@ -98,6 +88,17 @@ describe('Table of Contents Acceptance Criteria & Integration Suite (US-021.4)',
       expect(within(tocSidebar).getByText(h)).toBeInTheDocument();
     });
 
+    // Locate target heading in main content and attach spy
+    const targetHeading = document.getElementById('chapter-5-advanced-navigation')!;
+    expect(targetHeading).toBeInTheDocument();
+    targetHeading.scrollIntoView = vi.fn();
+    const scrollSpy = vi.spyOn(targetHeading, 'scrollIntoView');
+
+    // Verify container is .markdown-content and contains target heading
+    const scrollContainer = screen.getByTestId('markdown-content');
+    expect(scrollContainer).toBeInTheDocument();
+    expect(scrollContainer.contains(targetHeading)).toBe(true);
+
     // Locate 5th heading link in TOC (Chapter 5: Advanced Navigation)
     const fifthHeadingLink = screen.getByTestId('toc-link-chapter-5-advanced-navigation');
     expect(fifthHeadingLink).toHaveAttribute('href', '#chapter-5-advanced-navigation');
@@ -105,11 +106,12 @@ describe('Table of Contents Acceptance Criteria & Integration Suite (US-021.4)',
     // Click 5th heading link
     fireEvent.click(fifthHeadingLink);
 
-    // Verify smooth scroll was dispatched
-    expect(scrollToMock).toHaveBeenCalledTimes(1);
-    expect(scrollToMock).toHaveBeenCalledWith(
-      expect.objectContaining({ behavior: 'smooth' })
-    );
+    // Verify smooth scrollIntoView was dispatched on targetHeading
+    expect(scrollSpy).toHaveBeenCalledTimes(1);
+    expect(scrollSpy).toHaveBeenCalledWith({
+      behavior: 'smooth',
+      block: 'start',
+    });
   });
 
   it('Criterion 3: Scrolling down updates the highlighted TOC item to match the current viewport section', () => {
@@ -170,11 +172,17 @@ Third example code.
     expect(tocLinks[1]).toHaveAttribute('href', '#example-1');
     expect(tocLinks[2]).toHaveAttribute('href', '#example-2');
 
+    const targetHeading1 = document.getElementById('example-1')!;
+    expect(targetHeading1).toBeInTheDocument();
+    targetHeading1.scrollIntoView = vi.fn();
+    const scrollSpy1 = vi.spyOn(targetHeading1, 'scrollIntoView');
+
     // Clicking the 2nd duplicate heading scrolls to #example-1
     fireEvent.click(tocLinks[1]);
-    expect(scrollToMock).toHaveBeenCalledWith(
-      expect.objectContaining({ behavior: 'smooth' })
-    );
+    expect(scrollSpy1).toHaveBeenCalledWith({
+      behavior: 'smooth',
+      block: 'start',
+    });
   });
 
   it('Criterion 5: Documents without headings collapse the TOC sidebar cleanly and disable the toggle', () => {
@@ -224,13 +232,19 @@ console.log('No headings here');
     expect(within(tocSidebar).getByText('راهنمای نصب و راه‌اندازی')).toBeInTheDocument();
     expect(within(tocSidebar).getByText('پیکربندی شبکه')).toBeInTheDocument();
 
+    const persianHeading = document.getElementById('راهنمای-نصب-و-راه-اندازی')!;
+    expect(persianHeading).toBeInTheDocument();
+    persianHeading.scrollIntoView = vi.fn();
+    const scrollSpyPersian = vi.spyOn(persianHeading, 'scrollIntoView');
+
     const link = screen.getByTestId('toc-link-راهنمای-نصب-و-راه-اندازی');
     expect(link).toHaveAttribute('href', '#راهنمای-نصب-و-راه-اندازی');
 
     fireEvent.click(link);
-    expect(scrollToMock).toHaveBeenCalledWith(
-      expect.objectContaining({ behavior: 'smooth' })
-    );
+    expect(scrollSpyPersian).toHaveBeenCalledWith({
+      behavior: 'smooth',
+      block: 'start',
+    });
   });
 
   it('Keyboard Navigation: Toggles outline on Ctrl+L keyboard shortcut', () => {
@@ -275,6 +289,10 @@ console.log('No headings here');
   });
 
   it('Auto-scroll: watches activeIndex and calls scrollIntoView on active TOC item without scrolling main document', () => {
+    const scrollIntoViewMock = vi.fn();
+    window.HTMLElement.prototype.scrollIntoView =
+      scrollIntoViewMock as unknown as typeof Element.prototype.scrollIntoView;
+
     const items = extractHeadingsFromMarkdown(`
 # Chapter 1
 ## Chapter 2

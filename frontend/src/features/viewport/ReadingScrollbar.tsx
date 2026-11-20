@@ -21,10 +21,7 @@ export const ReadingScrollbar: React.FC<ReadingScrollbarProps> = ({
   const resolveTarget = useCallback((): HTMLElement | null => {
     if (viewportRef.current) return viewportRef.current;
     if (typeof document !== 'undefined') {
-      return (
-        document.querySelector<HTMLElement>('.markdown-content') ||
-        document.querySelector<HTMLElement>('.markdown-viewport')
-      );
+      return document.querySelector<HTMLElement>('.markdown-content');
     }
     return null;
   }, [viewportRef]);

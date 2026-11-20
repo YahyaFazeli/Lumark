@@ -19,6 +19,7 @@
   border-radius: 0;
   box-shadow: none;
   overflow: hidden;
+  overflow: clip;
   position: relative;
   scrollbar-gutter: stable;
   scrollbar-width: none;
@@ -315,6 +316,7 @@ body.focus-mode .floating-toolbar-container {
   flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
+  overflow: clip;
   position: relative;
 }
 
@@ -330,6 +332,8 @@ body.focus-mode .floating-toolbar-container {
   position: relative;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  --heading-scroll-offset: 80px;
+  scroll-padding-top: var(--heading-scroll-offset);
 }
 
 .markdown-viewport-body>.markdown-content::-webkit-scrollbar {
@@ -547,7 +551,6 @@ h6,
   line-height: 1.35;
   margin-top: 1.75em;
   margin-bottom: 0.75em;
-  scroll-margin-top: 80px;
 }
 
 .markdown-content h1:first-child,
@@ -572,7 +575,7 @@ h6,
 .markdown-content h6,
 .markdown-heading,
 [data-heading-id] {
-  scroll-margin-top: 80px;
+  scroll-margin-top: calc(var(--heading-scroll-offset, 80px) / var(--current-zoom, var(--md-zoom, 1)));
 }
 
 .markdown-content h1,
@@ -587,7 +590,6 @@ h6,
   margin-bottom: 26px;
   padding-bottom: 20px;
   border-bottom: 1px solid var(--border-subtle);
-  scroll-margin-top: 80px;
 }
 
 .markdown-content h2,
@@ -600,7 +602,6 @@ h6,
   color: var(--text-primary);
   margin-top: 44px;
   margin-bottom: 16px;
-  scroll-margin-top: 80px;
 }
 
 .markdown-content h3,
@@ -612,23 +613,19 @@ h6,
   color: var(--text-primary);
   margin-top: 32px;
   margin-bottom: 12px;
-  scroll-margin-top: 80px;
 }
 
 .markdown-content h4 {
   font-size: 1.1rem;
-  scroll-margin-top: 80px;
 }
 
 .markdown-content h5 {
   font-size: 1rem;
-  scroll-margin-top: 80px;
 }
 
 .markdown-content h6 {
   font-size: 0.9rem;
   color: var(--text-muted);
-  scroll-margin-top: 80px;
 }
 
 /* Heading Anchors */

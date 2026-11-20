@@ -4,12 +4,7 @@ import { TableOfContents } from './TableOfContents';
 import { TocItem } from './types';
 
 describe('TableOfContents Sidebar Component (US-021.2)', () => {
-  let scrollToMock: ReturnType<typeof vi.fn>;
-
   beforeEach(() => {
-    scrollToMock = vi.fn();
-    window.HTMLElement.prototype.scrollTo =
-      scrollToMock as unknown as typeof Element.prototype.scrollTo;
   });
 
   afterEach(() => {
@@ -49,6 +44,8 @@ describe('TableOfContents Sidebar Component (US-021.2)', () => {
     const targetHeading = document.createElement('h2');
     targetHeading.id = 'architecture';
     targetHeading.textContent = 'Architecture';
+    targetHeading.scrollIntoView = vi.fn();
+    const scrollSpy = vi.spyOn(targetHeading, 'scrollIntoView');
     document.body.appendChild(targetHeading);
 
     const onSelectHeading = vi.fn();
@@ -64,9 +61,10 @@ describe('TableOfContents Sidebar Component (US-021.2)', () => {
 
     expect(onSelectHeading).toHaveBeenCalledTimes(1);
     expect(onSelectHeading).toHaveBeenCalledWith('architecture');
-    expect(scrollToMock).toHaveBeenCalledWith(
-      expect.objectContaining({ behavior: 'smooth' })
-    );
+    expect(scrollSpy).toHaveBeenCalledWith({
+      behavior: 'smooth',
+      block: 'start',
+    });
 
     document.body.removeChild(targetHeading);
   });
