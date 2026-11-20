@@ -306,15 +306,16 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
 
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.defaultPrevented) return;
       // Ctrl+F or Cmd+F
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+      if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'f' || e.code === 'KeyF')) {
         e.preventDefault();
         if (search.isOpen) {
           search.closeSearch();
         } else {
           search.openSearch();
         }
-      } else if (e.key === 'F3' && search.isOpen) {
+      } else if ((e.key === 'F3' || e.code === 'F3') && search.isOpen) {
         e.preventDefault();
         if (e.shiftKey) {
           search.prevMatch();
@@ -372,11 +373,22 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
   const resolvedScrollbarPosition: 'left' | 'right' =
     resolvedTocPosition === 'left' ? 'right' : 'left';
 
+  const handleViewportWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (
+      contentRef.current &&
+      e.target !== contentRef.current &&
+      !contentRef.current.contains(e.target as Node)
+    ) {
+      contentRef.current.scrollTop += e.deltaY;
+    }
+  };
+
   return (
     <div
       ref={viewportRef}
       className={`markdown-viewport ${className}`.trim()}
       data-testid="markdown-viewport"
+      onWheel={handleViewportWheel}
     >
       {Boolean(filename || filePath) && (
         <div className="floating-toolbar-container" data-testid="document-header">

@@ -516,8 +516,8 @@ input[type="text"] {
 .markdown-content {
     box-sizing: border-box;
     width: 100%;
-    max-width: 700px;
-    margin: 0 auto;
+    max-width: none;
+    margin: 0;
 }
 
 .markdown-content h1.doc-heading {

@@ -161,11 +161,19 @@ export const ReadingScrollbar: React.FC<ReadingScrollbarProps> = ({
     };
   }, [isDragging, thumbHeight, viewportRef]);
 
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    const el = resolveTarget();
+    if (el) {
+      el.scrollTop += e.deltaY;
+    }
+  };
+
   return (
     <div
       className={`reading-scrollbar-container scrollbar-${side}`}
       data-testid="reading-scrollbar-container"
       data-side={side}
+      onWheel={handleWheel}
     >
       <div
         ref={trackRef}

@@ -308,6 +308,17 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
           );
         };
 
+        const handleRailWheel = (e: React.WheelEvent<HTMLElement>) => {
+          const scrollTarget =
+            (containerRef?.current as HTMLElement | null) ||
+            (typeof document !== 'undefined'
+              ? document.querySelector<HTMLElement>('.markdown-content')
+              : null);
+          if (scrollTarget) {
+            scrollTarget.scrollTop += e.deltaY;
+          }
+        };
+
         return (
           <nav
             ref={railRef}
@@ -316,6 +327,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
             data-testid="toc-sidebar"
             data-position={position}
             dir={position === 'right' ? 'rtl' : 'ltr'}
+            onWheel={handleRailWheel}
           >
             {onClose && (
               <button
