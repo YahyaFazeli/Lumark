@@ -5,6 +5,8 @@ export interface UseScrollSpyOptions {
   itemIds?: string[];
   rootMargin?: string;
   threshold?: number | number[];
+  disabled?: boolean;
+  isProgrammaticScrollRef?: RefObject<boolean>;
 }
 
 /**
@@ -22,6 +24,8 @@ export function useScrollSpy(options: UseScrollSpyOptions = {}): {
     itemIds,
     rootMargin = '-20px 0px -60% 0px',
     threshold = 0,
+    disabled = false,
+    isProgrammaticScrollRef,
   } = options;
 
   const [activeId, setActiveId] = useState<string | null>(() => {
@@ -83,6 +87,21 @@ export function useScrollSpy(options: UseScrollSpyOptions = {}): {
     const visibleEntries = new Map<string, IntersectionObserverEntry>();
 
     const updateActiveHeading = () => {
+      // Mute updates during programmatic smooth scrolls or when explicitly disabled
+      if (disabled || isProgrammaticScrollRef?.current) {
+        return;
+      }
+
+      // Check top-of-document boundary: when scrolled to the top of the container,
+      // the first heading is always active (Bug 5 fix)
+      if (container && container.scrollTop <= 20 && elements.length > 0) {
+        const firstId = elements[0].id || elements[0].getAttribute('data-heading-id');
+        if (firstId) {
+          setActiveId(firstId);
+          return;
+        }
+      }
+
       // Find visible headings
       const intersecting = Array.from(visibleEntries.values()).filter(
         (entry) => entry.isIntersecting
@@ -172,7 +191,7 @@ export function useScrollSpy(options: UseScrollSpyOptions = {}): {
       }
       scrollTarget.removeEventListener('scroll', handleScroll);
     };
-  }, [containerRef, itemIds, rootMargin, threshold]);
+  }, [containerRef, itemIds, rootMargin, threshold, disabled, isProgrammaticScrollRef]);
 
   return { activeId, setActiveId };
 }

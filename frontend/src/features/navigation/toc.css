@@ -19,11 +19,17 @@
   -ms-overflow-style: none;
   width: 220px;
   box-sizing: border-box;
+  scroll-padding-top: 44px;
 }
 
 .scrollspy-rail:not(:has(.toc-counter)) .toc-list,
 .toc-sidebar:not(:has(.toc-counter)) .toc-list {
   padding-top: 16px;
+}
+
+.scrollspy-rail:not(:has(.toc-counter)),
+.toc-sidebar:not(:has(.toc-counter)) {
+  scroll-padding-top: 16px;
 }
 
 .scrollspy-rail::-webkit-scrollbar,
@@ -61,7 +67,10 @@
 .toc-counter {
   position: sticky;
   top: 0;
-  background: var(--bg-canvas);
+  background: transparent;
+  background: color-mix(in srgb, var(--bg-canvas) 70%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   z-index: 10;
   font-family: var(--font-mono, monospace);
   font-size: 11px;
@@ -119,6 +128,7 @@
   align-items: stretch;
   position: relative;
   width: 100%;
+  scroll-margin-top: 44px;
 }
 
 .spy-item,

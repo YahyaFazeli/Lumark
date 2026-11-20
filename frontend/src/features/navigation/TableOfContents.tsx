@@ -59,10 +59,14 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
   }, [propsActiveId, effectiveItems]);
 
   const [clickedId, setClickedId] = React.useState<string | null>(null);
+  const isProgrammaticScrollRef = React.useRef(false);
+  const scrollTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scrollEndCleanupRef = React.useRef<(() => void) | null>(null);
 
   const spyData = useScrollSpy({
     containerRef,
     itemIds,
+    isProgrammaticScrollRef,
   });
 
   React.useEffect(() => {
@@ -70,11 +74,23 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
     if (!scrollTarget) return;
 
     const handleScroll = () => {
+      // Don't reset clickedId while programmatic scroll is active
+      if (isProgrammaticScrollRef.current) {
+        return;
+      }
       setClickedId(null);
     };
 
     scrollTarget.addEventListener('scroll', handleScroll, { passive: true });
-    return () => scrollTarget.removeEventListener('scroll', handleScroll);
+    return () => {
+      scrollTarget.removeEventListener('scroll', handleScroll);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+      if (scrollEndCleanupRef.current) {
+        scrollEndCleanupRef.current();
+      }
+    };
   }, [containerRef]);
 
   const activeId = propsActiveId ?? clickedId ?? spyData.activeId;
@@ -110,10 +126,23 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
       });
     }
 
+    // When scrolling back to the top item (activeIndex === 0), scroll the TOC container
+    // completely to top=0 so the first item and counter are not obscured
+    if (activeIndex === 0 && railRef.current) {
+      if (typeof railRef.current.scrollTo === 'function') {
+        railRef.current.scrollTo({
+          top: 0,
+          behavior: 'smooth',
+        });
+      } else {
+        railRef.current.scrollTop = 0;
+      }
+    }
+
     if (mainDoc && prevScrollTop !== undefined && mainDoc.scrollTop !== prevScrollTop) {
       mainDoc.scrollTop = prevScrollTop;
     }
-  }, [activeIndex]);
+  }, [activeIndex, hasHeadings]);
 
   if (!isOpen) {
     return null;
@@ -122,6 +151,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
   const handleHeadingClick = (e: React.MouseEvent, id: string) => {
     e.preventDefault();
 
+    // 1. Immediately activate clicked item
     setClickedId(id);
     spyData.setActiveId(id);
 
@@ -129,63 +159,120 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
       onSelectHeading(id);
     }
 
-  // Directly locate target element within the scrolling content root (.markdown-content)
-  const root =
-      (containerRef?.current as HTMLElement | null) ||
-      (typeof document !== 'undefined'
-          ? document.querySelector<HTMLElement>('.markdown-content')
-          : null);
+    // 2. Set programmatic scroll lock to mute IntersectionObserver during scroll animation (Bug 7)
+    isProgrammaticScrollRef.current = true;
 
-      const safeDecode = (val: string) => {
-        try {
-          return decodeURIComponent(val);
-        } catch {
-          return val;
-        }
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+      scrollTimeoutRef.current = null;
+    }
+    if (scrollEndCleanupRef.current) {
+      scrollEndCleanupRef.current();
+      scrollEndCleanupRef.current = null;
+    }
+
+    const unlock = () => {
+      isProgrammaticScrollRef.current = false;
+      setClickedId(null);
+      if (scrollEndCleanupRef.current) {
+        scrollEndCleanupRef.current();
+        scrollEndCleanupRef.current = null;
+      }
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+        scrollTimeoutRef.current = null;
+      }
+    };
+
+    const scrollTarget = containerRef?.current ?? (typeof window !== 'undefined' ? window : null);
+
+    if (scrollTarget) {
+      const handleScrollEnd = () => {
+        unlock();
+      };
+      const handleUserInterrupt = () => {
+        unlock();
       };
 
-      let target: HTMLElement | null = null;
+      scrollTarget.addEventListener('scrollend', handleScrollEnd, { once: true });
+      scrollTarget.addEventListener('wheel', handleUserInterrupt, { once: true, passive: true });
+      scrollTarget.addEventListener('touchstart', handleUserInterrupt, { once: true, passive: true });
 
-      if (root && typeof CSS !== 'undefined') {
-        const candidates = [id, safeDecode(id)];
-        for (const val of candidates) {
-          try {
-            const escaped = CSS.escape(val);
-            target =
-              root.querySelector<HTMLElement>(`#${escaped}`) ||
-              root.querySelector<HTMLElement>(`[data-heading-id="${escaped}"]`) ||
-              root.querySelector<HTMLElement>(`[name="${escaped}"]`);
-            if (target) break;
-          } catch {
-            // ignore selector syntax errors
-          }
+      scrollEndCleanupRef.current = () => {
+        scrollTarget.removeEventListener('scrollend', handleScrollEnd);
+        scrollTarget.removeEventListener('wheel', handleUserInterrupt);
+        scrollTarget.removeEventListener('touchstart', handleUserInterrupt);
+      };
+    }
+
+    // Safety timeout in case scrollend is not supported or not triggered (e.g., in test env or old browser)
+    scrollTimeoutRef.current = setTimeout(() => {
+      unlock();
+    }, 1000);
+
+    // Directly locate target element within the scrolling content root (.markdown-content)
+    const root =
+      (containerRef?.current as HTMLElement | null) ||
+      (typeof document !== 'undefined'
+        ? document.querySelector<HTMLElement>('.markdown-content')
+        : null);
+
+    const safeDecode = (val: string) => {
+      try {
+        return decodeURIComponent(val);
+      } catch {
+        return val;
+      }
+    };
+
+    let target: HTMLElement | null = null;
+
+    if (root && typeof CSS !== 'undefined') {
+      const candidates = [id, safeDecode(id)];
+      for (const val of candidates) {
+        try {
+          const escaped = CSS.escape(val);
+          target =
+            root.querySelector<HTMLElement>(`#${escaped}`) ||
+            root.querySelector<HTMLElement>(`[data-heading-id="${escaped}"]`) ||
+            root.querySelector<HTMLElement>(`[name="${escaped}"]`);
+          if (target) break;
+        } catch {
+          // ignore selector syntax errors
         }
       }
+    }
 
-      // Secondary fallback in case containerRef was somehow detached
-      if (!target) {
-        target = document.getElementById(id) || document.getElementById(safeDecode(id));
+    // Secondary fallback in case containerRef was somehow detached
+    if (!target) {
+      target = document.getElementById(id) || document.getElementById(safeDecode(id));
+    }
+
+    if (target) {
+      const prefersReducedMotion =
+        typeof window !== 'undefined' &&
+        window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+      const behavior: ScrollBehavior = prefersReducedMotion ? 'auto' : 'smooth';
+
+      if (typeof target.scrollIntoView === 'function') {
+        target.scrollIntoView({ behavior, block: 'start' });
       }
 
-        if (target) {
-          const prefersReducedMotion =
-            typeof window !== 'undefined' &&
-            window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
-          const behavior: ScrollBehavior = prefersReducedMotion ? 'auto' : 'smooth';
+      if (prefersReducedMotion) {
+        unlock();
+      }
 
-            if (typeof target.scrollIntoView === 'function') {
-              target.scrollIntoView({ behavior, block: 'start' });
-            }
-
-            if (typeof window !== 'undefined' && window.localStorage?.getItem('debugOutline') === '1') {
-              requestAnimationFrame(() => {
-                const diagMsg = `[Outline Debug] Target: "${target?.id}" | scrollIntoView dispatched (behavior: ${behavior})`;
-                defaultToastStore.showInfo(diagMsg);
-                console.info(diagMsg);
-              });
-            }
-          }
-        };
+      if (typeof window !== 'undefined' && window.localStorage?.getItem('debugOutline') === '1') {
+        requestAnimationFrame(() => {
+          const diagMsg = `[Outline Debug] Target: "${target?.id}" | scrollIntoView dispatched (behavior: ${behavior})`;
+          defaultToastStore.showInfo(diagMsg);
+          console.info(diagMsg);
+        });
+      }
+    } else {
+      unlock();
+    }
+  };
 
         const renderNode = (node: TocNode): React.ReactNode => {
           const isActive = activeId === node.id;

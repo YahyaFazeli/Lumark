@@ -195,9 +195,89 @@ Deep content.
 
           fireEvent.click(screen.getByTestId('toc-link-custom-offset-heading'));
 
-            expect(scrollSpy).toHaveBeenCalledWith({
-              behavior: 'smooth',
-              block: 'start',
-            });
+          expect(scrollSpy).toHaveBeenCalledWith({
+            behavior: 'smooth',
+            block: 'start',
           });
         });
+
+  it('mutes intermediate scroll and intersection events during programmatic click-to-jump (Bug 7)', () => {
+    const markdown = `
+# Section 1
+Content 1
+
+## Section 2
+Content 2
+
+## Section 3
+Content 3
+
+## Section 4
+Content 4
+`;
+
+    render(<MarkdownViewer document={{ filename: 'mute-test.md', content: markdown }} showToc={true} />);
+
+    const link4 = screen.getByTestId('toc-link-section-4');
+    const link2 = screen.getByTestId('toc-link-section-2');
+    const heading4 = document.getElementById('section-4')!;
+    heading4.scrollIntoView = vi.fn();
+
+    // Click section 4
+    fireEvent.click(link4);
+
+    // Immediately section 4 must be active
+    expect(link4).toHaveClass('active');
+    expect(link2).not.toHaveClass('active');
+
+    // Simulate intermediate scroll events on .markdown-content while smooth scroll is animating
+    const content = screen.getByTestId('markdown-content');
+    fireEvent.scroll(content);
+
+    // Section 4 must still remain active (not cleared to null or intermediate items)
+    expect(link4).toHaveClass('active');
+    expect(link2).not.toHaveClass('active');
+
+    // Dispatch scrollend event to complete the programmatic scroll
+    fireEvent(content, new Event('scrollend'));
+
+    // Section 4 is still active
+    expect(link4).toHaveClass('active');
+  });
+
+  it('scrolls the TOC rail back to top (scrollTop=0) when first heading becomes active (Bug 5)', () => {
+    const markdown = `
+# First Title
+Intro
+
+## Second Title
+More content
+`;
+
+    render(<MarkdownViewer document={{ filename: 'scroll-top.md', content: markdown }} showToc={true} />);
+
+    const rail = screen.getByTestId('toc-sidebar');
+    const scrollToSpy = vi.fn();
+    rail.scrollTo = scrollToSpy;
+
+    // Simulate clicking second section
+    const link2 = screen.getByTestId('toc-link-second-title');
+    const heading2 = document.getElementById('second-title')!;
+    heading2.scrollIntoView = vi.fn();
+    fireEvent.click(link2);
+
+    expect(link2).toHaveClass('active');
+
+    // Simulate clicking first section
+    const link1 = screen.getByTestId('toc-link-first-title');
+    const heading1 = document.getElementById('first-title')!;
+    heading1.scrollIntoView = vi.fn();
+    fireEvent.click(link1);
+
+    expect(link1).toHaveClass('active');
+    expect(scrollToSpy).toHaveBeenCalledWith({
+      top: 0,
+      behavior: 'smooth',
+    });
+  });
+});
