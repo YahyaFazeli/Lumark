@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"syscall"
 	"time"
 	"unicode/utf8"
@@ -40,6 +41,7 @@ func init() {
 	// Register custom events for frontend bindings
 	application.RegisterEvent[string]("time")
 	application.RegisterEvent[DocumentData]("document:open")
+	application.RegisterEvent[string]("file:open")
 	application.RegisterEvent[watcher.FileChangeEvent]("file:changed")
 	application.RegisterEvent[string]("wails:file-changed")
 }
@@ -106,6 +108,9 @@ func main() {
 	if len(os.Args) > 1 {
 		log.Printf("[IPC/Primary] Initial arguments: %v (working dir: %s)", os.Args[1:], wd)
 		for _, arg := range os.Args[1:] {
+			if arg == "" || strings.HasPrefix(arg, "-") {
+				continue
+			}
 			logReceivedFile("IPC/Primary", arg)
 			targetFile := arg
 			if !filepath.IsAbs(targetFile) {
@@ -116,6 +121,7 @@ func main() {
 			} else {
 				log.Printf("[DocumentService] Initial document loaded: %s (dir: %s, bytes: %d)",
 					doc.Filename, doc.Dir, len(doc.Content))
+				docService.SetInitialDocument(doc)
 			}
 		}
 	}
@@ -145,22 +151,25 @@ func main() {
 		singleInstanceOpt = &application.SingleInstanceOptions{
 			UniqueID: "com.lumark.app",
 			OnSecondInstanceLaunch: func(data application.SecondInstanceData) {
+				// Non-blocking: handle payload in a separate goroutine so OnSecondInstanceLaunch
+				// returns immediately, unblocking the second instance and preventing Win32 IPC deadlocks.
 				go func() {
 					log.Printf("[SingleInstance] Second instance launched: %v (dir: %s)", data.Args, data.WorkingDir)
 					for _, arg := range data.Args {
-						logReceivedFile("SingleInstance", arg)
+						if arg == "" || strings.HasPrefix(arg, "-") {
+							continue
+						}
+						// Skip the executable binary itself
+						if strings.EqualFold(filepath.Ext(arg), ".exe") {
+							continue
+						}
 						targetFile := arg
 						if !filepath.IsAbs(targetFile) {
 							targetFile = filepath.Join(data.WorkingDir, targetFile)
 						}
-						if doc, loadErr := docService.LoadFile(targetFile); loadErr != nil {
-							log.Printf("[DocumentService] Failed to load forwarded document %s: %v", targetFile, loadErr)
-						} else {
-							log.Printf("[DocumentService] Forwarded document loaded: %s (dir: %s, bytes: %d)",
-								doc.Filename, doc.Dir, len(doc.Content))
-							if app != nil {
-								app.Event.Emit("document:open", doc)
-							}
+						logReceivedFile("SingleInstance", targetFile)
+						if app != nil {
+							app.Event.Emit("file:open", targetFile)
 						}
 					}
 					if mainWindow != nil {
@@ -302,17 +311,16 @@ func main() {
 			for msg := range coord.Messages() {
 				log.Printf("[IPC/Primary] Received forwarded message from secondary (working dir: %s, args: %v)", msg.WorkingDir, msg.Args)
 				for _, arg := range msg.Args {
-					logReceivedFile("IPC/Primary", arg)
+					if arg == "" || strings.HasPrefix(arg, "-") {
+						continue
+					}
 					targetFile := arg
 					if !filepath.IsAbs(targetFile) {
 						targetFile = filepath.Join(msg.WorkingDir, targetFile)
 					}
-					if doc, loadErr := docService.LoadFile(targetFile); loadErr != nil {
-						log.Printf("[DocumentService] Failed to load forwarded document %s: %v", targetFile, loadErr)
-					} else {
-						log.Printf("[DocumentService] Forwarded document loaded: %s (dir: %s, bytes: %d)",
-							doc.Filename, doc.Dir, len(doc.Content))
-						app.Event.Emit("document:open", doc)
+					logReceivedFile("IPC/Primary", targetFile)
+					if app != nil {
+						app.Event.Emit("file:open", targetFile)
 					}
 				}
 				// Bring the main window forward and request focus

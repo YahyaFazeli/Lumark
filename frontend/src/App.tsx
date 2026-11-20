@@ -248,9 +248,9 @@ export function App() {
     });
 
     Events.On('file:open', (pathData: any) => {
-      const p = pathData?.data;
+      const p = typeof pathData === 'string' ? pathData : pathData?.data;
       if (typeof p === 'string' && p.trim()) {
-        loadDocumentPath(p);
+        loadDocumentPath(p.trim());
       }
     });
 

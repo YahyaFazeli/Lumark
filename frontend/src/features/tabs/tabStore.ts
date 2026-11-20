@@ -93,11 +93,15 @@ export class TabStore {
       isReadOnly: options.isReadOnly,
     };
 
-    const newTabs = disambiguateTitles([...this.state.tabs, newTab]);
+    // Explicitly append newly created tabs using array.push to ensure insertion at the END
+    const nextTabs = [...this.state.tabs];
+    nextTabs.push(newTab);
+    const newTabs = disambiguateTitles(nextTabs);
 
+    // Immediately set the active tab to the new tab's ID
     this.state = {
       tabs: newTabs,
-      activeTabId: tabId,
+      activeTabId: newTab.id,
     };
 
     this.notify();

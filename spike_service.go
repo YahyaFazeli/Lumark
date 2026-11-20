@@ -19,9 +19,11 @@ type DocumentData struct {
 
 // SpikeDocumentService coordinates document loading and updates the scoped asset resolver root.
 type SpikeDocumentService struct {
-	mu       sync.RWMutex
-	resolver *assets.ScopedResolver
-	current  DocumentData
+	mu         sync.RWMutex
+	resolver   *assets.ScopedResolver
+	current    DocumentData
+	initialDoc DocumentData
+	hasInitial bool
 }
 
 // NewSpikeDocumentService creates a new SpikeDocumentService.
@@ -63,9 +65,28 @@ func (s *SpikeDocumentService) LoadFile(path string) (DocumentData, error) {
 	return s.current, nil
 }
 
-// GetCurrentDocument returns the currently loaded document data.
+// SetInitialDocument records the document opened via CLI arguments or OS launch.
+// It is preserved across subsequent LoadFile calls during startup.
+func (s *SpikeDocumentService) SetInitialDocument(doc DocumentData) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.initialDoc = doc
+	s.hasInitial = true
+}
+
+// GetInitialDocument returns the initial document loaded from command-line arguments on launch.
+func (s *SpikeDocumentService) GetInitialDocument() DocumentData {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.initialDoc
+}
+
+// GetCurrentDocument returns the initial document if present, or the currently loaded document data.
 func (s *SpikeDocumentService) GetCurrentDocument() DocumentData {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
+	if s.hasInitial {
+		return s.initialDoc
+	}
 	return s.current
 }

@@ -63,6 +63,29 @@ describe('TabStateStore (US-007.1)', () => {
     expect(updatedState.activeTabId).toBe(tab4.id);
   });
 
+  it('appends OS opened file at the end and activates it when tabs were restored on startup (App Closed Scenario)', () => {
+    // 1. Restore tabs from previous session
+    const tab1 = store.openTab({ filePath: '/prev/doc1.md', content: 'Prev 1' });
+    const tab2 = store.openTab({ filePath: '/prev/doc2.md', content: 'Prev 2' });
+    expect(store.getState().tabs).toHaveLength(2);
+    expect(store.getState().tabs[0].id).toBe(tab1.id);
+    expect(store.getState().tabs[1].id).toBe(tab2.id);
+
+    // 2. Open file passed from OS / CLI on startup
+    const osTab = store.openTab({ filePath: '/os/launched.md', content: 'Launched from OS' });
+    const state = store.getState();
+
+    // Verify it is appended at the END of the tab list
+    expect(state.tabs).toHaveLength(3);
+    expect(state.tabs[0].id).toBe(tab1.id);
+    expect(state.tabs[1].id).toBe(tab2.id);
+    expect(state.tabs[2].id).toBe(osTab.id);
+
+    // Verify it is immediately active
+    expect(state.activeTabId).toBe(osTab.id);
+    expect(store.getActiveTab()?.id).toBe(osTab.id);
+  });
+
   it('prevents duplicate tabs and focuses existing tab without altering order', () => {
     const tab1 = store.openTab({ filePath: '/docs/intro.md', content: 'Intro' });
     const tab2 = store.openTab({ filePath: '/docs/setup.md', content: 'Setup' });
