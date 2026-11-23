@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/logo.svg" alt="Lumark Logo" width="96" height="96">
+  <img src="build/icons-src/icon-color-bg.svg" alt="Lumark Logo" width="96" height="96">
 </p>
 
 # Lumark

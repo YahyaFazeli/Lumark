@@ -9,6 +9,7 @@ import { TabItem } from '../tabs/types';
 import { TabErrorBoundary } from '../errors';
 import { useTheme } from '../viewport/themeStore';
 import { Icon } from '../../components/Icon';
+import { AppLogo } from '../../components/AppLogo';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 import './shell.css';
 
@@ -328,7 +329,7 @@ export const AppShell: React.FC<AppShellProps> = ({
             data-testid="app-brand-btn"
           >
             <div className="brand-badge">
-              <Icon name="book-open" size={15} strokeWidth={2.2} />
+              <AppLogo size={18} />
             </div>
           </button>
 

@@ -83,6 +83,7 @@ tasks:
       - dist/**/*
     deps:
       - task: install:frontend:deps
+      - task: generate:icons
       - task: generate:bindings
         vars:
           BUILD_FLAGS:
@@ -188,17 +189,22 @@ tasks:
       - wails3 generate bindings -f '{{.BUILD_FLAGS}}' -clean=true{{if eq .OBFUSCATED "true"}} -obfuscated{{end}} -ts -i
 
   generate:icons:
-    summary: Generates Windows `.ico` and Mac `.icns` from an image; on macOS, `-iconcomposerinput appicon.icon -macassetdir darwin` also produces `Assets.car` from a `.icon` file (skipped on other platforms).
+    summary: Generates all production icons (App, Document, Tray, Favicon) from build/icons-src/ using scripts/generate-icons.py
     run: once
     dir: build
     sources:
-      - "appicon.png"
-      - "appicon.icon"
+      - "icons-src/*"
     generates:
+      - "appicon.png"
+      - "document.png"
+      - "trayicon.png"
       - "darwin/icons.icns"
+      - "darwin/document.icns"
       - "windows/icon.ico"
+      - "windows/document.ico"
+      - "../frontend/public/favicon.svg"
     cmds:
-      - wails3 generate icons -input appicon.png -macfilename darwin/icons.icns -windowsfilename windows/icon.ico -iconcomposerinput appicon.icon -macassetdir darwin
+      - python3 ../scripts/generate-icons.py
 
   dev:frontend:
     summary: Runs the frontend in development mode

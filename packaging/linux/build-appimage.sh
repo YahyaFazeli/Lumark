@@ -61,7 +61,7 @@ chmod 644 "${APP_DIR}/usr/share/applications/${APP_NAME}.desktop" "${APP_DIR}/${
 ln -sf "${APP_NAME}.desktop" "${APP_DIR}/markdown-viewer.desktop"
 
 # 3. Icons
-SVG_SRC="${ROOT_DIR}/packaging/linux/lumark.svg"
+SVG_SRC="${ROOT_DIR}/build/icons-src/icon-color.svg"
 cp -p "${SVG_SRC}" "${APP_DIR}/usr/share/icons/hicolor/scalable/apps/${APP_NAME}.svg"
 cp -p "${SVG_SRC}" "${APP_DIR}/usr/share/icons/hicolor/scalable/apps/lumark.svg"
 chmod 644 "${APP_DIR}/usr/share/icons/hicolor/scalable/apps/${APP_NAME}.svg" "${APP_DIR}/usr/share/icons/hicolor/scalable/apps/lumark.svg"

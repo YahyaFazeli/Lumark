@@ -125,7 +125,7 @@ def main():
     repo_root = Path(__file__).resolve().parent.parent
     desktop_file = repo_root / "packaging" / "linux" / "lumark.desktop"
     build_desktop_file = repo_root / "build" / "linux" / "lumark.desktop"
-    svg_icon = repo_root / "packaging" / "linux" / "lumark.svg"
+    svg_icon = repo_root / "build" / "icons-src" / "icon-color.svg"
 
     if len(sys.argv) > 1:
         desktop_file = Path(sys.argv[1])

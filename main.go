@@ -37,6 +37,9 @@ var frontendAssets embed.FS
 //go:embed build/appicon.png
 var appIcon []byte
 
+//go:embed build/trayicon.png
+var trayIcon []byte
+
 func init() {
 	// Register custom events for frontend bindings
 	application.RegisterEvent[string]("time")
@@ -278,6 +281,38 @@ func main() {
 
 	// Hook macOS Launch Services open-file delegate events
 	platform.SetupMacOpenFileHandler(app, &spikeDocLoaderAdapter{docService: docService}, mainWindow)
+
+	// Initialize system tray
+	systemTray := app.SystemTray.New()
+	systemTray.SetIcon(trayIcon)
+	if runtime.GOOS == "darwin" {
+		systemTray.SetTemplateIcon(trayIcon)
+	}
+
+	trayMenu := app.NewMenu()
+	trayMenu.Add("Show App").OnClick(func(ctx *application.Context) {
+		if mainWindow != nil {
+			if mainWindow.IsMinimised() {
+				mainWindow.Restore()
+			}
+			mainWindow.Show()
+			mainWindow.Focus()
+		}
+	})
+	trayMenu.AddSeparator()
+	trayMenu.Add("Quit").OnClick(func(ctx *application.Context) {
+		app.Quit()
+	})
+	systemTray.SetMenu(trayMenu)
+	systemTray.OnClick(func() {
+		if mainWindow != nil {
+			if mainWindow.IsMinimised() {
+				mainWindow.Restore()
+			}
+			mainWindow.Show()
+			mainWindow.Focus()
+		}
+	})
 
 	// Ensure coordinator and watcher are cleaned up on Wails shutdown
 	app.OnShutdown(func() {

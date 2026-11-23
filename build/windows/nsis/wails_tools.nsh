@@ -228,12 +228,14 @@ RequestExecutionLevel "${REQUEST_EXECUTION_LEVEL}"
 
 !macro wails.associateFiles
     ; Create file associations
-    
+    !insertmacro APP_ASSOCIATE "md" "Lumark.Markdown" "Markdown Document" "$INSTDIR\document.ico" "Open with Lumark" '"$INSTDIR\${PRODUCT_EXECUTABLE}" "%1"'
+    !insertmacro APP_ASSOCIATE "markdown" "Lumark.Markdown" "Markdown Document" "$INSTDIR\document.ico" "Open with Lumark" '"$INSTDIR\${PRODUCT_EXECUTABLE}" "%1"'
 !macroend
 
 !macro wails.unassociateFiles
     ; Delete app associations
-    
+    !insertmacro APP_UNASSOCIATE "md" "Lumark.Markdown"
+    !insertmacro APP_UNASSOCIATE "markdown" "Lumark.Markdown"
 !macroend
 
 !macro CUSTOM_PROTOCOL_ASSOCIATE PROTOCOL DESCRIPTION ICON COMMAND
