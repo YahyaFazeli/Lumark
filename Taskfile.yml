@@ -19,6 +19,11 @@ includes:
   android: ./build/android/Taskfile.yml
 
 tasks:
+  generate:icons:
+    summary: Generates all production icons (App, Document, Tray, Favicon)
+    cmds:
+      - task: common:generate:icons
+
   build:
     summary: Builds the application
     cmds:

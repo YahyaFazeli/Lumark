@@ -5,6 +5,7 @@
   "description": "Lumark - Fast, cross-platform desktop Markdown reader",
   "scripts": {
     "dev": "wails3 dev -config ./build/config.yml",
+    "generate:icons": "node scripts/generate-icons.js",
     "test": "npm --prefix frontend run test:unit",
     "test:security": "npm --prefix frontend run test:security",
     "test:fixtures": "npm --prefix frontend run test:fixtures",

@@ -189,7 +189,7 @@ tasks:
       - wails3 generate bindings -f '{{.BUILD_FLAGS}}' -clean=true{{if eq .OBFUSCATED "true"}} -obfuscated{{end}} -ts -i
 
   generate:icons:
-    summary: Generates all production icons (App, Document, Tray, Favicon) from build/icons-src/ using scripts/generate-icons.py
+    summary: Generates all production icons (App, Document, Tray, Favicon) from build/icons-src/ using scripts/generate-icons.js
     run: once
     dir: build
     sources:
@@ -204,7 +204,7 @@ tasks:
       - "windows/document.ico"
       - "../frontend/public/favicon.svg"
     cmds:
-      - python3 ../scripts/generate-icons.py
+      - node ../scripts/generate-icons.js
 
   dev:frontend:
     summary: Runs the frontend in development mode
