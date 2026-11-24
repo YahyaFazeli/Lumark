@@ -285,6 +285,7 @@ Another search keyword appears here.
     const mark = heading?.querySelector<HTMLElement>('mark[data-search-match="true"]');
     expect(mark?.textContent).toBe('Mermaid');
     expect(mark?.getAttribute('dir')).toBe('ltr');
+    expect(mark?.style.direction).toBe('ltr');
     expect(mark?.style.unicodeBidi).toBe('isolate');
     // Logical text order is preserved: preceding Persian substring then the match.
     expect(heading?.textContent).toContain('نمودار فلوچارت (Mermaid Diagram)');

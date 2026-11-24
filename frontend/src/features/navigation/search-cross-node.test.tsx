@@ -197,7 +197,7 @@ describe('Cross-Node Search & Multi-Element Highlighting', () => {
     });
 
     it('highlights English word inside Persian RTL paragraph with bidi isolation and single normalized mark element', () => {
-      container.innerHTML = '<p dir="rtl">شاخه main میشوند</p>';
+      container.innerHTML = '<p dir="rtl">شاخه main می‌شوند</p>';
       const originalHTML = container.innerHTML;
 
       const matches = findMatches(container, 'main');
@@ -206,7 +206,7 @@ describe('Cross-Node Search & Multi-Element Highlighting', () => {
 
       applyHighlights(container, matches, 0);
 
-      // Verify there is ONLY ONE <mark class="search-match"> wrapping "main"
+      // Verify there is EXACTLY ONE <mark class="search-match"> wrapping "main"
       const marks = container.querySelectorAll<HTMLElement>('mark.search-match');
       expect(marks).toHaveLength(1);
 
@@ -222,20 +222,20 @@ describe('Cross-Node Search & Multi-Element Highlighting', () => {
       // Assert pure LTR English word has dir="ltr" to prevent bidi character reversal
       expect(mark.getAttribute('dir')).toBe('ltr');
 
-      // Assert CSS classes
+      // Assert CSS classes and active state
       expect(mark.classList.contains('search-match')).toBe(true);
       expect(mark.classList.contains('search-highlight')).toBe(true);
       expect(mark.classList.contains('active')).toBe(true);
 
       // Assert inline CSS properties
       expect(mark.style.display).toBe('inline');
-      expect(mark.style.direction).toBe('inherit');
+      expect(mark.style.direction).toBe('ltr');
       expect(mark.style.unicodeBidi).toBe('isolate');
 
       // Assert surrounding Persian text is preserved in natural order
-      expect(container.textContent).toBe('شاخه main میشوند');
+      expect(container.textContent).toBe('شاخه main می‌شوند');
       expect(mark.previousSibling?.textContent).toBe('شاخه ');
-      expect(mark.nextSibling?.textContent).toBe(' میشوند');
+      expect(mark.nextSibling?.textContent).toBe(' می‌شوند');
 
       // Clear highlights and verify restoration
       clearHighlights(container);
@@ -273,26 +273,55 @@ describe('Cross-Node Search & Multi-Element Highlighting', () => {
       expect(mark.childNodes[0].nodeValue).toBe('main');
       expect(mark.getAttribute('dir')).toBe('ltr');
       expect(mark.style.unicodeBidi).toBe('isolate');
-      expect(mark.style.direction).toBe('inherit');
+      expect(mark.style.direction).toBe('ltr');
 
       clearHighlights(container);
       expect(container.querySelectorAll('mark')).toHaveLength(0);
       expect(container.textContent).toBe('شاخه main میشوند');
     });
 
-    it('verifies search.css enforces unicode-bidi: isolate and direction: inherit on .search-match', () => {
+    it('verifies search.css enforces unicode-bidi: isolate and direction: ltr without direction: inherit', () => {
       const cssPath = path.resolve(__dirname, 'search.css');
       const css = fs.readFileSync(cssPath, 'utf-8');
 
-      // Check .search-match rule
+      // Check .search-match rule has unicode-bidi: isolate, display: inline, and direction: ltr
       expect(css).toMatch(/\.search-match[^\{]*\{[^}]*unicode-bidi:\s*isolate;/);
       expect(css).toMatch(/\.search-match[^\{]*\{[^}]*display:\s*inline;/);
-      expect(css).toMatch(/\.search-match[^\{]*\{[^}]*direction:\s*inherit;/);
+      expect(css).toMatch(/\.search-match[^\{]*\{[^}]*direction:\s*ltr;/);
+      // Crucial: Must NOT contain direction: inherit
+      expect(css).not.toMatch(/\.search-match[^\{]*\{[^}]*direction:\s*inherit;/);
 
-      // Check active rule
+      // Check explicit LTR direction rules
+      expect(css).toMatch(/\.search-match\[dir="ltr"\][^\{]*\{[^}]*direction:\s*ltr;/);
+
+      // Check active rule has direction: ltr and unicode-bidi: isolate
       expect(css).toMatch(/\.search-match\.active[^\{]*\{[^}]*unicode-bidi:\s*isolate;/);
       expect(css).toMatch(/\.search-match\.active[^\{]*\{[^}]*display:\s*inline;/);
-      expect(css).toMatch(/\.search-match\.active[^\{]*\{[^}]*direction:\s*inherit;/);
+      expect(css).toMatch(/\.search-match\.active[^\{]*\{[^}]*direction:\s*ltr;/);
+      expect(css).not.toMatch(/\.search-match\.active[^\{]*\{[^}]*direction:\s*inherit;/);
+    });
+
+    it('handles search across pre-existing highlights by clearing previous highlights first', () => {
+      // Suppose previous search left an active mark on "in": "شاخه ma<mark>in</mark> میشوند"
+      container.innerHTML =
+        '<p dir="rtl">شاخه ma<mark class="search-match active" data-search-match="true">in</mark> میشوند</p>';
+
+      clearHighlights(container);
+      const matches = findMatches(container, 'main');
+      expect(matches).toHaveLength(1);
+
+      applyHighlights(container, matches, 0);
+
+      const marks = container.querySelectorAll<HTMLElement>('mark.search-match');
+      // Must be EXACTLY ONE mark, never nested or multiple
+      expect(marks).toHaveLength(1);
+      const mark = marks[0];
+      expect(mark.textContent).toBe('main');
+      expect(mark.childNodes.length).toBe(1);
+      expect(mark.getAttribute('dir')).toBe('ltr');
+      expect(mark.style.direction).toBe('ltr');
+      expect(mark.classList.contains('active')).toBe(true);
+      expect(mark.querySelectorAll('mark')).toHaveLength(0);
     });
   });
 
@@ -468,7 +497,7 @@ Another paragraph with **across** tags highlighted.
       expect(marks[0].getAttribute('dir')).toBe('ltr');
       expect(marks[0].style.unicodeBidi).toBe('isolate');
       expect(marks[0].style.display).toBe('inline');
-      expect(marks[0].style.direction).toBe('inherit');
+      expect(marks[0].style.direction).toBe('ltr');
     });
   });
 });

@@ -11,6 +11,13 @@ export function isPureLtr(text: string): boolean {
   return LTR_SCRIPT_REGEX.test(text) && !RTL_SCRIPT_REGEX.test(text);
 }
 
+/**
+ * Checks whether a text string contains RTL script characters and no LTR script characters.
+ */
+export function isPureRtl(text: string): boolean {
+  return RTL_SCRIPT_REGEX.test(text) && !LTR_SCRIPT_REGEX.test(text);
+}
+
 const VOID_ELEMENT_TAGS = new Set([
   'AREA',
   'BASE',
@@ -100,7 +107,7 @@ export function mergeAdjacentIdenticalElements(root: HTMLElement): void {
 export function clearHighlights(root: HTMLElement | null): void {
   if (!root) return;
 
-  const marks = root.querySelectorAll('mark[data-search-match="true"]');
+  const marks = root.querySelectorAll('mark[data-search-match="true"], mark.search-match, mark.search-highlight');
   if (marks.length === 0) return;
 
   const affectedParents = new Set<Node>();
@@ -174,20 +181,35 @@ export function applyHighlights(
 
       const frag = range.extractContents();
 
+      // Unwrap any pre-existing or nested mark tags inside the extracted fragment
+      // so a match is NEVER broken into multiple nested or split mark elements
+      if (typeof frag.querySelectorAll === 'function') {
+        const existingMarks = frag.querySelectorAll('mark');
+        existingMarks.forEach((m) => {
+          const parent = m.parentNode;
+          if (parent) {
+            while (m.firstChild) {
+              parent.insertBefore(m.firstChild, m);
+            }
+            parent.removeChild(m);
+          }
+        });
+      }
+
       const mark = document.createElement('mark');
       mark.className = 'search-match search-highlight';
       mark.setAttribute('data-search-match', 'true');
       mark.setAttribute('data-match-index', String(match.index));
 
-      // If the matched search term is purely LTR (English), set dir="ltr"
-      // to ensure correct character ordering within an RTL context
+      // For purely LTR (English) matches, explicitly enforce dir="ltr" and direction: ltr.
+      // Crucial: do NOT use direction: inherit for LTR matches inside an RTL paragraph,
+      // as inheriting RTL causes the browser to reverse English letters.
       if (isPureLtr(match.text)) {
         mark.setAttribute('dir', 'ltr');
+        mark.style.direction = 'ltr';
       }
 
-      // Isolated bidi styling to prevent reordering by surrounding text
       mark.style.display = 'inline';
-      mark.style.direction = 'inherit';
       mark.style.unicodeBidi = 'isolate';
       mark.style.padding = '0';
       mark.style.margin = '0';
@@ -199,6 +221,18 @@ export function applyHighlights(
 
       mark.appendChild(frag);
 
+      // Unwrap any nested mark tags inside the new mark
+      const nestedMarks = mark.querySelectorAll('mark');
+      nestedMarks.forEach((nested) => {
+        const parent = nested.parentNode;
+        if (parent) {
+          while (nested.firstChild) {
+            parent.insertBefore(nested.firstChild, nested);
+          }
+          parent.removeChild(nested);
+        }
+      });
+
       // Merge adjacent identical inline tags and normalize text nodes inside the mark
       // to ensure the browser doesn't render the word as separate pieces
       mergeAdjacentIdenticalElements(mark);
@@ -207,6 +241,16 @@ export function applyHighlights(
       }
 
       range.insertNode(mark);
+
+      // After inserting the mark into the DOM, normalize both the mark and its parent element
+      // to ensure all text nodes are cleanly merged into single string runs
+      if (typeof mark.normalize === 'function') {
+        mark.normalize();
+      }
+      if (mark.parentElement && typeof mark.parentElement.normalize === 'function') {
+        mark.parentElement.normalize();
+      }
+
       markElements.push(mark);
     } catch (err) {
       console.warn('Failed to wrap match range in highlight mark:', err);

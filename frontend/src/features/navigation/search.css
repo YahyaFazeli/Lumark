@@ -129,15 +129,15 @@ input[type="text"].search-bar-input {
   color: var(--danger);
 }
 
-/* Document Match Highlighting (bidi isolation: unicode-bidi: isolate prevents
-   highlighted text from merging with or being reordered by surrounding bidi text) */
+/* Document Match Highlighting (bidi isolation: unicode-bidi: isolate and direction: ltr
+   prevent highlighted LTR text from merging with or being reordered by surrounding RTL text) */
 mark,
 mark.search-match,
 .search-match,
 mark.search-highlight,
 .search-highlight {
   display: inline;
-  direction: inherit;
+  direction: ltr;
   unicode-bidi: isolate;
   padding: 0;
   margin: 0;
@@ -148,12 +148,26 @@ mark.search-highlight,
   font-weight: inherit;
 }
 
+mark.search-match[dir="ltr"],
+.search-match[dir="ltr"],
+mark.search-highlight[dir="ltr"],
+.search-highlight[dir="ltr"] {
+  direction: ltr;
+}
+
+mark.search-match[dir="rtl"],
+.search-match[dir="rtl"],
+mark.search-highlight[dir="rtl"],
+.search-highlight[dir="rtl"] {
+  direction: rtl;
+}
+
 mark.search-match.active,
 .search-match.active,
 mark.search-highlight.active,
 .search-highlight.active {
   display: inline;
-  direction: inherit;
+  direction: ltr;
   unicode-bidi: isolate;
   padding: 0;
   margin: 0;
