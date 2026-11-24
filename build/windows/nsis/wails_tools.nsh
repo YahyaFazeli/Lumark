@@ -228,24 +228,33 @@ RequestExecutionLevel "${REQUEST_EXECUTION_LEVEL}"
 
 !macro wails.associateFiles
     ; Create file associations
-
-    !insertmacro APP_ASSOCIATE "md" "Markdown Document" "Markdown Document" "$INSTDIR\document.ico" "Open with ${INFO_PRODUCTNAME}" "$INSTDIR\${PRODUCT_EXECUTABLE} $\"%1$\""
     File "..\document.ico"
 
-    !insertmacro APP_ASSOCIATE "markdown" "Markdown Document" "Markdown Document" "$INSTDIR\document.ico" "Open with ${INFO_PRODUCTNAME}" "$INSTDIR\${PRODUCT_EXECUTABLE} $\"%1$\""
-    File "..\document.ico"
+    !insertmacro APP_ASSOCIATE "md" "Lumark.Markdown" "Markdown Document" "$INSTDIR\document.ico,0" "Open with ${INFO_PRODUCTNAME}" '"$INSTDIR\${PRODUCT_EXECUTABLE}" "%1"'
+    !insertmacro APP_ASSOCIATE "markdown" "Lumark.Markdown" "Markdown Document" "$INSTDIR\document.ico,0" "Open with ${INFO_PRODUCTNAME}" '"$INSTDIR\${PRODUCT_EXECUTABLE}" "%1"'
 
+    ; Explicitly ensure DefaultIcon is set with resource index 0
+    WriteRegStr SHELL_CONTEXT "Software\Classes\Lumark.Markdown\DefaultIcon" "" "$INSTDIR\document.ico,0"
+
+    ; Register in OpenWithProgids for Windows 10/11 Explorer
+    WriteRegStr SHELL_CONTEXT "Software\Classes\.md\OpenWithProgids" "Lumark.Markdown" ""
+    WriteRegStr SHELL_CONTEXT "Software\Classes\.markdown\OpenWithProgids" "Lumark.Markdown" ""
+
+    ; Notify Windows Shell that file associations have changed
+    System::Call 'shell32.dll::SHChangeNotify(i 0x08000000, i 0, p 0, p 0)'
 !macroend
 
 !macro wails.unassociateFiles
     ; Delete app associations
-
-    !insertmacro APP_UNASSOCIATE "md" "Markdown Document"
+    !insertmacro APP_UNASSOCIATE "md" "Lumark.Markdown"
+    !insertmacro APP_UNASSOCIATE "markdown" "Lumark.Markdown"
+    DeleteRegValue SHELL_CONTEXT "Software\Classes\.md\OpenWithProgids" "Lumark.Markdown"
+    DeleteRegValue SHELL_CONTEXT "Software\Classes\.markdown\OpenWithProgids" "Lumark.Markdown"
+    DeleteRegKey SHELL_CONTEXT "Software\Classes\Lumark.Markdown"
     Delete "$INSTDIR\document.ico"
 
-    !insertmacro APP_UNASSOCIATE "markdown" "Markdown Document"
-    Delete "$INSTDIR\document.ico"
-
+    ; Notify Windows Shell that file associations have changed
+    System::Call 'shell32.dll::SHChangeNotify(i 0x08000000, i 0, p 0, p 0)'
 !macroend
 
 !macro CUSTOM_PROTOCOL_ASSOCIATE PROTOCOL DESCRIPTION ICON COMMAND
