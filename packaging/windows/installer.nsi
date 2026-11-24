@@ -115,8 +115,9 @@ Section "MainSection" SEC01
     SetOutPath "$INSTDIR"
     SetOverwrite ifnewer
 
-    ; Place main executable
+    ; Place main executable and document icon
     File "/oname=${PRODUCT_EXE}" "..\..\bin\Lumark.exe"
+    File "..\..\build\windows\document.ico"
 
     ; Create Start Menu and Desktop shortcuts
     CreateDirectory "$SMPROGRAMS\${PRODUCT_NAME}"
@@ -129,7 +130,7 @@ Section "MainSection" SEC01
     WriteRegStr HKCU "Software\Classes\${PROGID}" "" "Markdown Document"
     WriteRegStr HKCU "Software\Classes\${PROGID}" "FriendlyTypeName" "Markdown Document"
     WriteRegStr HKCU "Software\Classes\${PROGID}" "CurVer" "${PROGID}"
-    WriteRegStr HKCU "Software\Classes\${PROGID}\DefaultIcon" "" "$INSTDIR\${PRODUCT_EXE},0"
+    WriteRegStr HKCU "Software\Classes\${PROGID}\DefaultIcon" "" "$INSTDIR\document.ico,0"
     WriteRegStr HKCU "Software\Classes\${PROGID}\shell\open" "FriendlyAppName" "${PRODUCT_NAME}"
     WriteRegStr HKCU "Software\Classes\${PROGID}\shell\open\command" "" '"$INSTDIR\${PRODUCT_EXE}" "%1"'
 
@@ -183,6 +184,7 @@ Section "Uninstall"
 
     ; Remove installed files
     Delete "$INSTDIR\${PRODUCT_EXE}"
+    Delete "$INSTDIR\document.ico"
     Delete "$INSTDIR\uninstall.exe"
     RMDir "$INSTDIR"
 

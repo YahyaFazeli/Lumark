@@ -84,12 +84,12 @@ Function .onInit
    !insertmacro wails.checkArchitecture
 FunctionEnd
 
-Section
+Section "Install"
     !insertmacro wails.setShellContext
 
     !insertmacro wails.webview2runtime
 
-    SetOutPath $INSTDIR
+    SetOutPath "$INSTDIR"
     
     !insertmacro wails.files
     File "..\document.ico"
@@ -106,10 +106,6 @@ SectionEnd
 Section "uninstall" 
     !insertmacro wails.setShellContext
 
-    RMDir /r "$AppData\${PRODUCT_EXECUTABLE}" # Remove the WebView2 DataPath
-
-    RMDir /r $INSTDIR
-
     Delete "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk"
     Delete "$DESKTOP\${INFO_PRODUCTNAME}.lnk"
     Delete "$INSTDIR\document.ico"
@@ -118,4 +114,7 @@ Section "uninstall"
     !insertmacro wails.unassociateCustomProtocols
 
     !insertmacro wails.deleteUninstaller
+
+    RMDir /r "$AppData\${PRODUCT_EXECUTABLE}" # Remove the WebView2 DataPath
+    RMDir /r "$INSTDIR"
 SectionEnd
