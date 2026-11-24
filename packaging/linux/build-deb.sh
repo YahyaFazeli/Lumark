@@ -57,7 +57,7 @@ chmod 644 "${STAGING_DIR}/usr/share/applications/lumark.desktop"
 ln -sf "lumark.desktop" "${STAGING_DIR}/usr/share/applications/markdown-viewer.desktop"
 
 # Copy scalable SVG icon
-SVG_SRC="${ROOT_DIR}/build/icons-src/icon-color.svg"
+SVG_SRC="${ROOT_DIR}/build/icons-src/appicon.svg"
 cp -p "${SVG_SRC}" "${STAGING_DIR}/usr/share/icons/hicolor/scalable/apps/lumark.svg"
 chmod 644 "${STAGING_DIR}/usr/share/icons/hicolor/scalable/apps/lumark.svg"
 ln -sf "lumark.svg" "${STAGING_DIR}/usr/share/icons/hicolor/scalable/apps/markdown-viewer.svg"

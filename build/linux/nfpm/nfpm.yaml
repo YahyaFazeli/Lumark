@@ -19,7 +19,7 @@ release: "1"
 contents:
   - src: "./bin/lumark"
     dst: "/usr/bin/lumark"
-  - src: "./build/icons-src/icon-color.svg"
+  - src: "./build/icons-src/appicon.svg"
     dst: "/usr/share/icons/hicolor/scalable/apps/lumark.svg"
   - src: "./build/appicon.png"
     dst: "/usr/share/icons/hicolor/128x128/apps/lumark.png"

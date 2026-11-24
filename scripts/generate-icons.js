@@ -7,11 +7,11 @@
  *
  * Source assets: build/icons-src/
  * Outputs:
- * - App Icon: Colored logo without background -> build/appicon.png (1024x1024), windows/icon.ico, darwin/icons.icns
- * - Document Icon: White logo with dark background -> build/document.png (1024x1024), windows/document.ico, darwin/document.icns
+ * - App Icon: Colored logo with background -> build/appicon.png (1024x1024), windows/icon.ico, darwin/icons.icns
+ * - Document Icon: Document icon -> build/document.png (1024x1024), windows/document.ico, darwin/document.icns
  * - System Tray Icon: White logo without background -> build/trayicon.png (32x32)
- * - Favicon: Colored logo with dark background -> frontend/public/favicon.svg
- * - Fallback Wails Icon: build/icons-src/icon-color-bg.svg -> frontend/public/wails.png (256x256)
+ * - Favicon: Colored logo with background -> frontend/public/favicon.svg
+ * - Fallback Wails Icon: build/icons-src/appicon.svg -> frontend/public/wails.png (256x256)
  */
 
 const fs = require('fs');
@@ -142,41 +142,34 @@ function main() {
 
   const skipWails = process.argv.includes('--skip-wails');
 
-  // 1. App Icon: Colored SVG without background -> build/appicon.png (1024x1024 with padding)
-  const iconColorSvgPath = path.join(ICONS_SRC_DIR, 'icon-color.svg');
-  const iconColorSvg = fs.readFileSync(iconColorSvgPath, 'utf8');
+  // 1. App Icon: Colored SVG with dark background tile -> build/appicon.png (1024x1024 square tile)
+  const iconSvgPath = path.join(ICONS_SRC_DIR, 'appicon.svg');
+  const iconSvg = fs.readFileSync(iconSvgPath, 'utf8');
   const appiconPng = path.join(BUILD_DIR, 'appicon.png');
-  // viewBox: 158 144 395 421 -> aspect ratio 395 / 421
-  const appTargetH = 840;
-  const appTargetW = 840 * (395 / 421);
-  renderCenteredSvg({
-    svgContent: iconColorSvg,
+  renderSquareSvg({
+    svgContent: iconSvg,
     outPath: appiconPng,
-    canvasW: 1024,
-    canvasH: 1024,
-    targetW: appTargetW,
-    targetH: appTargetH,
-    viewBox: '158 144 395 421',
+    size: 1024,
   });
 
-  // 2. Document Icon: White SVG with dark background tile -> build/document.png (1024x1024 square tile)
-  const iconWhiteBgSvgPath = path.join(ICONS_SRC_DIR, 'icon-white-bg.svg');
-  const iconWhiteBgSvg = fs.readFileSync(iconWhiteBgSvgPath, 'utf8');
+  // 2. Document Icon: Document SVG -> build/document.png (1024x1024 square tile)
+  const documentSvgPath = path.join(ICONS_SRC_DIR, 'document.svg');
+  const documentSvg = fs.readFileSync(documentSvgPath, 'utf8');
   const documentPng = path.join(BUILD_DIR, 'document.png');
   renderSquareSvg({
-    svgContent: iconWhiteBgSvg,
+    svgContent: documentSvg,
     outPath: documentPng,
     size: 1024,
   });
 
   // 3. System Tray Icon: White SVG without background -> build/trayicon.png (32x32)
-  const iconWhiteSvgPath = path.join(ICONS_SRC_DIR, 'icon-white.svg');
-  const iconWhiteSvg = fs.readFileSync(iconWhiteSvgPath, 'utf8');
+  const trayiconSvgPath = path.join(ICONS_SRC_DIR, 'favicon.svg');
+  const trayiconSvg = fs.readFileSync(trayiconSvgPath, 'utf8');
   const trayiconPng = path.join(BUILD_DIR, 'trayicon.png');
   const trayTargetH = 26;
   const trayTargetW = 26 * (395 / 421);
   renderCenteredSvg({
-    svgContent: iconWhiteSvg,
+    svgContent: trayiconSvg,
     outPath: trayiconPng,
     canvasW: 32,
     canvasH: 32,
@@ -186,16 +179,14 @@ function main() {
   });
 
   // 4. Favicon: Colored SVG with dark background -> frontend/public/favicon.svg
-  const iconColorBgSvgPath = path.join(ICONS_SRC_DIR, 'icon-color-bg.svg');
-  const iconColorBgSvg = fs.readFileSync(iconColorBgSvgPath, 'utf8');
   const faviconSvg = path.join(FRONTEND_DIR, 'public', 'favicon.svg');
-  fs.copyFileSync(iconColorBgSvgPath, faviconSvg);
+  fs.copyFileSync(iconSvgPath, faviconSvg);
   console.log(`  [OK] Copied ${path.relative(ROOT_DIR, faviconSvg)}`);
 
   // Fallback wails.png
   const wailsPng = path.join(FRONTEND_DIR, 'public', 'wails.png');
   renderSquareSvg({
-    svgContent: iconColorBgSvg,
+    svgContent: iconSvg,
     outPath: wailsPng,
     size: 256,
   });
