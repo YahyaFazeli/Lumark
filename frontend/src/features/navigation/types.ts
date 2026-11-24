@@ -22,6 +22,8 @@ export interface SearchMatch {
   startOffset: number;
   endOffset: number;
   text: string;
+  startNode: Text;
+  endNode: Text;
 }
 
 export interface SearchOptions {

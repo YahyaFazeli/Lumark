@@ -1,8 +1,90 @@
 import { SearchMatch } from './types';
 
+const VOID_ELEMENT_TAGS = new Set([
+  'AREA',
+  'BASE',
+  'BR',
+  'COL',
+  'EMBED',
+  'HR',
+  'IMG',
+  'INPUT',
+  'LINK',
+  'META',
+  'PARAM',
+  'SOURCE',
+  'TRACK',
+  'WBR',
+]);
+
+const MERGEABLE_INLINE_TAGS = new Set([
+  'STRONG',
+  'EM',
+  'B',
+  'I',
+  'CODE',
+  'SPAN',
+  'U',
+  'S',
+  'DEL',
+  'SUB',
+  'SUP',
+  'KBD',
+  'SAMP',
+  'VAR',
+  'MARK',
+]);
+
+/**
+ * Removes empty leftover elements (e.g. from range.extractContents() splitting)
+ * without deleting void elements (like <img/>, <hr/>, <br/>) or elements with IDs.
+ */
+export function cleanEmptyElements(root: HTMLElement): void {
+  const elements = root.querySelectorAll('*');
+  elements.forEach((el) => {
+    if (
+      !VOID_ELEMENT_TAGS.has(el.tagName) &&
+      !el.matches('mark[data-search-match="true"]') &&
+      el.textContent === '' &&
+      !el.hasAttribute('id') &&
+      el.querySelectorAll(Array.from(VOID_ELEMENT_TAGS).join(',')).length === 0
+    ) {
+      el.remove();
+    }
+  });
+}
+
+/**
+ * Merges adjacent sibling elements of the same inline tag and identical attributes
+ * that may have been split during range extraction.
+ */
+export function mergeAdjacentIdenticalElements(root: HTMLElement): void {
+  const elements = root.querySelectorAll('*');
+  elements.forEach((el) => {
+    if (!MERGEABLE_INLINE_TAGS.has(el.tagName)) return;
+    let next = el.nextSibling;
+    while (
+      next &&
+      next.nodeType === Node.ELEMENT_NODE &&
+      (next as Element).tagName === el.tagName &&
+      (next as Element).attributes.length === el.attributes.length &&
+      Array.from((next as Element).attributes).every(
+        (attr) => el.getAttribute(attr.name) === attr.value
+      )
+    ) {
+      const nextEl = next as Element;
+      while (nextEl.firstChild) {
+        el.appendChild(nextEl.firstChild);
+      }
+      next = nextEl.nextSibling;
+      nextEl.remove();
+    }
+  });
+}
+
 /**
  * Removes all search highlight mark elements from the container and normalizes
- * text nodes, restoring the DOM to its exact original structure.
+ * text nodes and split elements, restoring the DOM to its exact original structure.
  */
 export function clearHighlights(root: HTMLElement | null): void {
   if (!root) return;
@@ -21,17 +103,25 @@ export function clearHighlights(root: HTMLElement | null): void {
     }
   });
 
+  cleanEmptyElements(root);
+  mergeAdjacentIdenticalElements(root);
+
   affectedParents.forEach((parent) => {
     if (typeof (parent as Element).normalize === 'function') {
       (parent as Element).normalize();
     }
   });
+
+  if (typeof root.normalize === 'function') {
+    root.normalize();
+  }
 }
 
 /**
- * Applies non-destructive `<mark>` highlights around text matches.
- * Groups matches per text node and processes them in reverse character order
- * to preserve text node offsets.
+ * Applies non-destructive `<mark>` highlights around text matches using the Range API.
+ * Handles both single-node and cross-node matches without splitting tags destructively.
+ * Matches are processed in reverse order (descending by index / document position) so that
+ * later DOM modifications do not invalidate earlier text nodes or character offsets.
  */
 export function applyHighlights(
   root: HTMLElement | null,
@@ -46,56 +136,56 @@ export function applyHighlights(
   // Always clear previous highlights first to avoid double-wrapping
   clearHighlights(root);
 
-  // Group matches by text node
-  const nodeMap = new Map<Text, SearchMatch[]>();
-  for (const match of matches) {
-    const list = nodeMap.get(match.node) || [];
-    list.push(match);
-    nodeMap.set(match.node, list);
-  }
-
   const markElements: HTMLElement[] = [];
 
-  nodeMap.forEach((nodeMatches, textNode) => {
-    const parent = textNode.parentNode;
-    if (!parent) return;
+  // Sort descending by index so earlier splits/extractions don't invalidate later ones
+  const reverseMatches = [...matches].sort((a, b) => b.index - a.index);
 
-    // Sort descending by startOffset so earlier splits don't invalidate later ones
-    nodeMatches.sort((a, b) => b.startOffset - a.startOffset);
+  for (const match of reverseMatches) {
+    const startNode = match.startNode || match.node;
+    const endNode = match.endNode || match.node;
 
-    for (const match of nodeMatches) {
-      const nodeLength = textNode.textContent?.length ?? 0;
-      if (match.endOffset > nodeLength || match.startOffset < 0) {
-        continue;
+    if (!startNode || !endNode) continue;
+    if (!startNode.parentNode || !endNode.parentNode) continue;
+
+    const startNodeLength = startNode.textContent?.length ?? 0;
+    const endNodeLength = endNode.textContent?.length ?? 0;
+
+    if (match.startOffset < 0 || match.startOffset > startNodeLength) continue;
+    if (match.endOffset < 0 || match.endOffset > endNodeLength) continue;
+
+    try {
+      const range = document.createRange();
+      range.setStart(startNode, match.startOffset);
+      range.setEnd(endNode, match.endOffset);
+
+      const frag = range.extractContents();
+
+      const mark = document.createElement('mark');
+      mark.className = 'search-match search-highlight';
+      mark.setAttribute('data-search-match', 'true');
+      mark.setAttribute('data-match-index', String(match.index));
+      // Bidi-transparent wrapper: no dir attribute, no isolation.
+      mark.style.display = 'inline';
+      mark.style.padding = '0';
+      mark.style.margin = '0';
+      mark.style.unicodeBidi = 'normal';
+
+      if (match.index === activeIndex) {
+        mark.classList.add('active');
+        mark.setAttribute('data-search-active', 'true');
       }
 
-      try {
-        textNode.splitText(match.endOffset);
-        const matchNode = textNode.splitText(match.startOffset);
-
-        const mark = document.createElement('mark');
-        mark.className = 'search-match';
-        mark.setAttribute('data-search-match', 'true');
-        mark.setAttribute('data-match-index', String(match.index));
-        // Bidi-transparent wrapper: no dir attribute, no isolation.
-        mark.style.display = 'inline';
-        mark.style.padding = '0';
-        mark.style.margin = '0';
-        mark.style.unicodeBidi = 'normal';
-
-        if (match.index === activeIndex) {
-          mark.classList.add('active');
-          mark.setAttribute('data-search-active', 'true');
-        }
-
-        parent.replaceChild(mark, matchNode);
-        mark.appendChild(matchNode);
-        markElements.push(mark);
-      } catch (err) {
-        console.warn('Failed to wrap match node in highlight mark:', err);
-      }
+      mark.appendChild(frag);
+      range.insertNode(mark);
+      markElements.push(mark);
+    } catch (err) {
+      console.warn('Failed to wrap match range in highlight mark:', err);
     }
-  });
+  }
+
+  // Clean empty tags that might have been left behind by extractContents()
+  cleanEmptyElements(root);
 
   // Sort mark elements by their match index ascending
   markElements.sort((a, b) => {
@@ -129,25 +219,28 @@ export function updateActiveHighlight(
   if (!root) return null;
 
   if (previousIndex >= 0) {
-    const prev = root.querySelector<HTMLElement>(
+    const prevElements = root.querySelectorAll<HTMLElement>(
       `mark[data-search-match="true"][data-match-index="${previousIndex}"]`
     );
-    if (prev) {
+    prevElements.forEach((prev) => {
       prev.classList.remove('active');
       prev.removeAttribute('data-search-active');
-    }
+    });
   }
 
-  const next = root.querySelector<HTMLElement>(
+  const nextElements = root.querySelectorAll<HTMLElement>(
     `mark[data-search-match="true"][data-match-index="${newIndex}"]`
   );
-  if (next) {
-    next.classList.add('active');
-    next.setAttribute('data-search-active', 'true');
-    if (typeof next.scrollIntoView === 'function') {
-      next.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+  if (nextElements.length > 0) {
+    nextElements.forEach((next) => {
+      next.classList.add('active');
+      next.setAttribute('data-search-active', 'true');
+    });
+    const firstNext = nextElements[0];
+    if (typeof firstNext.scrollIntoView === 'function') {
+      firstNext.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
     }
-    return next;
+    return firstNext;
   }
 
   return null;

@@ -91,8 +91,55 @@ export function collectSearchableTextNodes(root: HTMLElement): Text[] {
   return textNodes;
 }
 
+export interface TextNodeEntry {
+  node: Text;
+  startIndex: number;
+  endIndex: number;
+}
+
+/**
+ * Binary search helper to find the TextNodeEntry containing a character offset.
+ */
+function findEntryForOffset(
+  nodeMap: TextNodeEntry[],
+  charIndex: number,
+  isEnd: boolean
+): TextNodeEntry | undefined {
+  let low = 0;
+  let high = nodeMap.length - 1;
+
+  while (low <= high) {
+    const mid = (low + high) >> 1;
+    const entry = nodeMap[mid];
+
+    if (isEnd) {
+      // Match ends at charIndex (exclusive): entry.startIndex < charIndex <= entry.endIndex
+      if (charIndex <= entry.startIndex) {
+        high = mid - 1;
+      } else if (charIndex > entry.endIndex) {
+        low = mid + 1;
+      } else {
+        return entry;
+      }
+    } else {
+      // Match starts at charIndex (inclusive): entry.startIndex <= charIndex < entry.endIndex
+      if (charIndex < entry.startIndex) {
+        high = mid - 1;
+      } else if (charIndex >= entry.endIndex) {
+        low = mid + 1;
+      } else {
+        return entry;
+      }
+    }
+  }
+
+  return undefined;
+}
+
 /**
  * Searches the DOM tree within root for occurrences of the query string.
+ * Builds a single concatenated text string with a node-offset map so searches
+ * can span across multiple DOM text nodes seamlessly.
  * Returns an array of SearchMatch objects with character offsets.
  */
 export function findMatches(
@@ -109,28 +156,62 @@ export function findMatches(
   const regex = new RegExp(escaped, caseSensitive ? 'g' : 'gi');
 
   const textNodes = collectSearchableTextNodes(root);
-  const matches: SearchMatch[] = [];
+  if (textNodes.length === 0) {
+    return [];
+  }
+
+  const nodeMap: TextNodeEntry[] = [];
+  let fullText = '';
 
   for (const node of textNodes) {
     const text = node.textContent || '';
-    if (!text) continue;
+    if (text.length === 0) continue;
 
-    regex.lastIndex = 0;
-    let match: RegExpExecArray | null;
+    const startIndex = fullText.length;
+    fullText += text;
+    const endIndex = fullText.length;
 
-    while ((match = regex.exec(text)) !== null) {
+    nodeMap.push({
+      node,
+      startIndex,
+      endIndex,
+    });
+  }
+
+  if (fullText.length === 0 || nodeMap.length === 0) {
+    return [];
+  }
+
+  const matches: SearchMatch[] = [];
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(fullText)) !== null) {
+    const matchStart = match.index;
+    const matchLength = match[0].length;
+    const matchEnd = matchStart + matchLength;
+    const matchText = match[0];
+
+    const startEntry = findEntryForOffset(nodeMap, matchStart, false);
+    const endEntry = findEntryForOffset(nodeMap, matchEnd, true);
+
+    if (startEntry && endEntry) {
+      const startOffset = matchStart - startEntry.startIndex;
+      const endOffset = matchEnd - endEntry.startIndex;
+
       matches.push({
         index: matches.length,
-        node,
-        startOffset: match.index,
-        endOffset: match.index + match[0].length,
-        text: match[0],
+        node: startEntry.node,
+        startNode: startEntry.node,
+        endNode: endEntry.node,
+        startOffset,
+        endOffset,
+        text: matchText,
       });
+    }
 
-      // Guard against zero-length matches infinite loop
-      if (match.index === regex.lastIndex) {
-        regex.lastIndex++;
-      }
+    // Guard against zero-length matches infinite loop
+    if (match.index === regex.lastIndex) {
+      regex.lastIndex++;
     }
   }
 
