@@ -6,10 +6,10 @@
 		"0409": {
 			"ProductVersion": "0.1.0",
 			"CompanyName": "Lumark",
-			"FileDescription": "Lumark - A fast, cross-platform Markdown reader",
+			"FileDescription": "A fast, cross-platform desktop Markdown reader",
 			"LegalCopyright": "© 2026, Lumark",
 			"ProductName": "Lumark",
-			"Comments": "This is a comment"
+			"Comments": "Phase 1 Feasibility Spike"
 		}
 	}
 }

@@ -92,7 +92,6 @@ Section
     SetOutPath $INSTDIR
     
     !insertmacro wails.files
-    File "..\document.ico"
 
     CreateShortcut "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
     CreateShortCut "$DESKTOP\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
@@ -112,7 +111,6 @@ Section "uninstall"
 
     Delete "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk"
     Delete "$DESKTOP\${INFO_PRODUCTNAME}.lnk"
-    Delete "$INSTDIR\document.ico"
 
     !insertmacro wails.unassociateFiles
     !insertmacro wails.unassociateCustomProtocols

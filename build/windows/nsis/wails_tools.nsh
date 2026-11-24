@@ -5,19 +5,19 @@
 !include "FileFunc.nsh"
 
 !ifndef INFO_PROJECTNAME
-    !define INFO_PROJECTNAME "markdown-viewer"
+    !define INFO_PROJECTNAME "Lumark"
 !endif
 !ifndef INFO_COMPANYNAME
-    !define INFO_COMPANYNAME "Markdown Viewer"
+    !define INFO_COMPANYNAME "Lumark"
 !endif
 !ifndef INFO_PRODUCTNAME
-    !define INFO_PRODUCTNAME "Markdown Viewer"
+    !define INFO_PRODUCTNAME "Lumark"
 !endif
 !ifndef INFO_PRODUCTVERSION
     !define INFO_PRODUCTVERSION "0.1.0"
 !endif
 !ifndef INFO_COPYRIGHT
-    !define INFO_COPYRIGHT "© 2026, Markdown Viewer"
+    !define INFO_COPYRIGHT "© 2026, Lumark"
 !endif
 !ifndef PRODUCT_EXECUTABLE
     !define PRODUCT_EXECUTABLE "${INFO_PROJECTNAME}.exe"
@@ -188,17 +188,17 @@ RequestExecutionLevel "${REQUEST_EXECUTION_LEVEL}"
             Goto ok
         ${EndIf}
      ${EndIf}
-    
+
 	SetDetailsPrint both
     DetailPrint "${WAILS_INSTALL_WEBVIEW_DETAILPRINT}"
     SetDetailsPrint listonly
-    
+
     InitPluginsDir
     CreateDirectory "$pluginsdir\webview2bootstrapper"
     SetOutPath "$pluginsdir\webview2bootstrapper"
     File "MicrosoftEdgeWebview2Setup.exe"
     ExecWait '"$pluginsdir\webview2bootstrapper\MicrosoftEdgeWebview2Setup.exe" /silent /install'
-    
+
     SetDetailsPrint both
     ok:
 !macroend
@@ -228,14 +228,24 @@ RequestExecutionLevel "${REQUEST_EXECUTION_LEVEL}"
 
 !macro wails.associateFiles
     ; Create file associations
-    !insertmacro APP_ASSOCIATE "md" "Lumark.Markdown" "Markdown Document" "$INSTDIR\document.ico" "Open with Lumark" '"$INSTDIR\${PRODUCT_EXECUTABLE}" "%1"'
-    !insertmacro APP_ASSOCIATE "markdown" "Lumark.Markdown" "Markdown Document" "$INSTDIR\document.ico" "Open with Lumark" '"$INSTDIR\${PRODUCT_EXECUTABLE}" "%1"'
+
+    !insertmacro APP_ASSOCIATE "md" "Markdown Document" "Markdown Document" "$INSTDIR\document.ico" "Open with ${INFO_PRODUCTNAME}" "$INSTDIR\${PRODUCT_EXECUTABLE} $\"%1$\""
+    File "..\document.ico"
+
+    !insertmacro APP_ASSOCIATE "markdown" "Markdown Document" "Markdown Document" "$INSTDIR\document.ico" "Open with ${INFO_PRODUCTNAME}" "$INSTDIR\${PRODUCT_EXECUTABLE} $\"%1$\""
+    File "..\document.ico"
+
 !macroend
 
 !macro wails.unassociateFiles
     ; Delete app associations
-    !insertmacro APP_UNASSOCIATE "md" "Lumark.Markdown"
-    !insertmacro APP_UNASSOCIATE "markdown" "Lumark.Markdown"
+
+    !insertmacro APP_UNASSOCIATE "md" "Markdown Document"
+    Delete "$INSTDIR\document.ico"
+
+    !insertmacro APP_UNASSOCIATE "markdown" "Markdown Document"
+    Delete "$INSTDIR\document.ico"
+
 !macroend
 
 !macro CUSTOM_PROTOCOL_ASSOCIATE PROTOCOL DESCRIPTION ICON COMMAND
@@ -254,10 +264,10 @@ RequestExecutionLevel "${REQUEST_EXECUTION_LEVEL}"
 
 !macro wails.associateCustomProtocols
     ; Create custom protocols associations
-    
+
 !macroend
 
 !macro wails.unassociateCustomProtocols
     ; Delete app custom protocol associations
-    
+
 !macroend

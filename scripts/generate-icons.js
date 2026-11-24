@@ -159,12 +159,12 @@ function main() {
     viewBox: '158 144 395 421',
   });
 
-  // 2. Document Icon: White SVG with dark background tile -> build/document.png (1024x1024 square tile)
-  const iconWhiteBgSvgPath = path.join(ICONS_SRC_DIR, 'icon-white-bg.svg');
-  const iconWhiteBgSvg = fs.readFileSync(iconWhiteBgSvgPath, 'utf8');
+  // 2. Document Icon: Colored SVG with dark background tile -> build/document.png (1024x1024 square tile)
+  const iconColorBgSvgPath = path.join(ICONS_SRC_DIR, 'icon-color-bg.svg');
+  const iconColorBgSvg = fs.readFileSync(iconColorBgSvgPath, 'utf8');
   const documentPng = path.join(BUILD_DIR, 'document.png');
   renderSquareSvg({
-    svgContent: iconWhiteBgSvg,
+    svgContent: iconColorBgSvg,
     outPath: documentPng,
     size: 1024,
   });
@@ -186,13 +186,11 @@ function main() {
   });
 
   // 4. Favicon: Colored SVG with dark background -> frontend/public/favicon.svg
-  const iconColorBgSvgPath = path.join(ICONS_SRC_DIR, 'icon-color-bg.svg');
   const faviconSvg = path.join(FRONTEND_DIR, 'public', 'favicon.svg');
   fs.copyFileSync(iconColorBgSvgPath, faviconSvg);
   console.log(`  [OK] Copied ${path.relative(ROOT_DIR, faviconSvg)}`);
 
   // Fallback wails.png
-  const iconColorBgSvg = fs.readFileSync(iconColorBgSvgPath, 'utf8');
   const wailsPng = path.join(FRONTEND_DIR, 'public', 'wails.png');
   renderSquareSvg({
     svgContent: iconColorBgSvg,
