@@ -11,6 +11,7 @@ import { rehypeAutoDirection } from '../direction/autoDirectionPlugin';
 import {
   useDirectionPreference,
   detectFirstStrongDirection,
+  applyDominanceDirection,
   type DirectionPreference,
 } from '../direction/autoDirection';
 import { remarkStrictMath, escapeCurrencyDollars } from './utils/remark-strict-math';
@@ -53,6 +54,7 @@ export interface MarkdownViewerProps {
   showToc?: boolean;
   onToggleToc?: () => void;
   onPrint?: () => void;
+  dominanceBidi?: boolean;
 }
 
 interface MarkdownContentBodyProps {
@@ -60,6 +62,8 @@ interface MarkdownContentBodyProps {
   slugTracker: SlugTracker;
   activePref: DirectionPreference;
   docDir?: string;
+  documentDirection?: 'rtl' | 'ltr';
+  dominanceBidi?: boolean;
   onOpenDocument?: (filePath: string, anchor?: string) => void;
   onOpenExternalUrl?: (url: string) => Promise<void> | void;
   onNavigateAnchor?: (anchor: string) => void;
@@ -156,12 +160,34 @@ const MarkdownContentBody = React.memo(
         slugTracker,
         activePref,
         docDir,
+        documentDirection = 'ltr',
+        dominanceBidi = false,
         onOpenDocument,
         onOpenExternalUrl,
         onNavigateAnchor,
       },
       ref
     ) => {
+      const innerRef = React.useRef<HTMLElement | null>(null);
+
+      const setRefs = React.useCallback(
+        (node: HTMLElement | null) => {
+          innerRef.current = node;
+          if (typeof ref === 'function') {
+            ref(node);
+          } else if (ref) {
+            (ref as React.MutableRefObject<HTMLElement | null>).current = node;
+          }
+        },
+        [ref]
+      );
+
+      React.useEffect(() => {
+        if (dominanceBidi && innerRef.current) {
+          applyDominanceDirection(innerRef.current, documentDirection);
+        }
+      }, [content, documentDirection, dominanceBidi]);
+
       const docContextValue = React.useMemo<MarkdownDocContextValue>(
         () => ({
           docDir,
@@ -174,7 +200,7 @@ const MarkdownContentBody = React.memo(
 
       return (
         <main
-          ref={ref}
+          ref={setRefs}
           className="markdown-content"
           data-testid="markdown-content"
           tabIndex={0}
@@ -224,6 +250,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
   showToc,
   onToggleToc,
   onPrint,
+  dominanceBidi = false,
 }) => {
   const [hookPref] = useDirectionPreference();
   const activePref = directionPreference ?? hookPref;
@@ -531,6 +558,8 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
           slugTracker={slugTracker}
           activePref={activePref}
           docDir={document?.dir}
+          documentDirection={docDir}
+          dominanceBidi={dominanceBidi}
           onOpenDocument={onOpenDocument}
           onOpenExternalUrl={onOpenExternalUrl}
           onNavigateAnchor={onNavigateAnchor}

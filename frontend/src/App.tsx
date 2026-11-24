@@ -76,6 +76,7 @@ const DocumentTabRenderer = React.memo<DocumentTabRendererProps>(({ tab, onOpenD
       )}
       <MarkdownViewer
         document={documentProp}
+        dominanceBidi={true}
         onOpenDocument={onOpenDocument}
         onPrint={onPrint}
       />
