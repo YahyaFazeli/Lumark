@@ -309,14 +309,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
         };
 
         const handleRailWheel = (e: React.WheelEvent<HTMLElement>) => {
-          const scrollTarget =
-            (containerRef?.current as HTMLElement | null) ||
-            (typeof document !== 'undefined'
-              ? document.querySelector<HTMLElement>('.markdown-content')
-              : null);
-          if (scrollTarget) {
-            scrollTarget.scrollTop += e.deltaY;
-          }
+          e.stopPropagation();
         };
 
         return (

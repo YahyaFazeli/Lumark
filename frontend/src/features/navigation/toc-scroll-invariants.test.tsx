@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import fs from 'fs';
 import path from 'path';
 import { MarkdownViewer } from '../rendering/MarkdownViewer';
@@ -156,6 +156,68 @@ ${Array.from({ length: 40 }, (_, i) => `## Section ${i + 1}\n\nContent for secti
 
       // 30 / 300 = 10% of track => 10% of 2000 = 200px document scroll
       expect(scrollDelta).toBe(200);
+    });
+  });
+
+  describe('TOC Wheel Isolation & Gutter Scroll Invariants', () => {
+    const longMarkdown = `
+# Title
+
+${Array.from({ length: 40 }, (_, i) => `## Section ${i + 1}\n\nContent for section ${i + 1}.`).join('\n\n')}
+`;
+
+    it('ensures scrolling over TOC does NOT scroll the main document and stops event propagation', () => {
+      render(
+        <MarkdownViewer
+          document={{ filename: 'toc-wheel-isolation.md', content: longMarkdown }}
+          showToc={true}
+        />
+      );
+
+      const content = screen.getByTestId('markdown-content');
+      const tocSidebar = screen.getByTestId('toc-sidebar');
+      const tocLink = screen.getByTestId('toc-link-section-1');
+
+      content.scrollTop = 200;
+
+      // Wheel event on the TOC rail container itself
+      fireEvent.wheel(tocSidebar, { deltaY: 80 });
+      // Main document must remain completely still
+      expect(content.scrollTop).toBe(200);
+
+      // Wheel event on a TOC child link item
+      fireEvent.wheel(tocLink, { deltaY: 120 });
+      // Main document must still remain completely still
+      expect(content.scrollTop).toBe(200);
+    });
+
+    it('ensures scrolling over gutters outside the TOC STILL scrolls the main document', () => {
+      render(
+        <MarkdownViewer
+          document={{ filename: 'gutter-wheel-test.md', content: longMarkdown }}
+          showToc={true}
+        />
+      );
+
+      const content = screen.getByTestId('markdown-content');
+      const viewport = screen.getByTestId('markdown-viewport');
+
+      content.scrollTop = 100;
+
+      // Wheel event on the outer viewport (gutter outside the TOC and content)
+      fireEvent.wheel(viewport, { deltaY: 75 });
+
+      expect(content.scrollTop).toBe(175);
+    });
+
+    it('verifies toc.css configures native scrolling with overscroll containment and pointer events', () => {
+      const tocCssPath = path.resolve(__dirname, 'toc.css');
+      const tocCss = fs.readFileSync(tocCssPath, 'utf-8');
+
+      // .scrollspy-rail / .toc-sidebar must have overflow-y: auto, overscroll-behavior: contain, and pointer-events: auto
+      expect(tocCss).toMatch(/\.scrollspy-rail[^{]*\{[^}]*overflow-y:\s*auto;/);
+      expect(tocCss).toMatch(/\.scrollspy-rail[^{]*\{[^}]*overscroll-behavior:\s*contain;/);
+      expect(tocCss).toMatch(/\.scrollspy-rail[^{]*\{[^}]*pointer-events:\s*auto;/);
     });
   });
 });
