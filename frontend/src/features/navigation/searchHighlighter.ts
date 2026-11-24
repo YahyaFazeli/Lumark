@@ -1,5 +1,16 @@
 import { SearchMatch } from './types';
 
+const RTL_SCRIPT_REGEX =
+  /[\p{Script=Arabic}\p{Script=Hebrew}\p{Script=Syriac}\p{Script=Thaana}\p{Script=Nko}\p{Script=Samaritan}\p{Script=Mandaic}]/u;
+const LTR_SCRIPT_REGEX = /[a-zA-Z\p{Script=Latin}\p{Script=Cyrillic}\p{Script=Greek}]/u;
+
+/**
+ * Checks whether a text string contains LTR script characters and no RTL script characters.
+ */
+export function isPureLtr(text: string): boolean {
+  return LTR_SCRIPT_REGEX.test(text) && !RTL_SCRIPT_REGEX.test(text);
+}
+
 const VOID_ELEMENT_TAGS = new Set([
   'AREA',
   'BASE',
@@ -90,6 +101,8 @@ export function clearHighlights(root: HTMLElement | null): void {
   if (!root) return;
 
   const marks = root.querySelectorAll('mark[data-search-match="true"]');
+  if (marks.length === 0) return;
+
   const affectedParents = new Set<Node>();
 
   marks.forEach((mark) => {
@@ -165,11 +178,19 @@ export function applyHighlights(
       mark.className = 'search-match search-highlight';
       mark.setAttribute('data-search-match', 'true');
       mark.setAttribute('data-match-index', String(match.index));
-      // Bidi-transparent wrapper: no dir attribute, no isolation.
+
+      // If the matched search term is purely LTR (English), set dir="ltr"
+      // to ensure correct character ordering within an RTL context
+      if (isPureLtr(match.text)) {
+        mark.setAttribute('dir', 'ltr');
+      }
+
+      // Isolated bidi styling to prevent reordering by surrounding text
       mark.style.display = 'inline';
+      mark.style.direction = 'inherit';
+      mark.style.unicodeBidi = 'isolate';
       mark.style.padding = '0';
       mark.style.margin = '0';
-      mark.style.unicodeBidi = 'normal';
 
       if (match.index === activeIndex) {
         mark.classList.add('active');
@@ -177,6 +198,14 @@ export function applyHighlights(
       }
 
       mark.appendChild(frag);
+
+      // Merge adjacent identical inline tags and normalize text nodes inside the mark
+      // to ensure the browser doesn't render the word as separate pieces
+      mergeAdjacentIdenticalElements(mark);
+      if (typeof mark.normalize === 'function') {
+        mark.normalize();
+      }
+
       range.insertNode(mark);
       markElements.push(mark);
     } catch (err) {

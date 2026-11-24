@@ -250,11 +250,9 @@ Another search keyword appears here.
     expect(marks.length).toBeGreaterThan(0);
     const firstMark = marks[0];
     expect(firstMark.textContent).toBe('س');
-    // The wrapped mark must NOT open an isolation context (dir="auto"/<bdi>/
-    // unicode-bidi:isolate): splitting the text node must not create additional
-    // directional runs, or LTR words swap places inside RTL lines.
+    // For Persian/Arabic characters, no dir attribute is set, but unicodeBidi is isolated
     expect(firstMark.getAttribute('dir')).toBeNull();
-    expect(firstMark.style.unicodeBidi).toBe('normal');
+    expect(firstMark.style.unicodeBidi).toBe('isolate');
     expect(firstMark.style.display).toBe('inline');
     expect(firstMark.style.padding).toBe('0px');
     expect(firstMark.style.margin).toBe('0px');
@@ -263,7 +261,7 @@ Another search keyword appears here.
 
   it('Persian Cursive Highlight: mark element keeps natural text order across siblings', () => {
     // Regression guard for "Mermaid" inside an RTL heading: the wrapped match is a
-    // plain inline child at its source position, so textContent order is unchanged.
+    // plain inline child with dir="ltr" and bidi isolation, preserving natural text flow.
     render(
       <MarkdownViewer
         document={{
@@ -284,9 +282,10 @@ Another search keyword appears here.
     const heading = screen.getByTestId('markdown-content').querySelector('h2');
     expect(heading).not.toBeNull();
     expect(heading?.querySelectorAll('mark[data-search-match="true"]').length).toBe(1);
-    const mark = heading?.querySelector('mark[data-search-match="true"]');
+    const mark = heading?.querySelector<HTMLElement>('mark[data-search-match="true"]');
     expect(mark?.textContent).toBe('Mermaid');
-    expect(mark?.getAttribute('dir')).toBeNull();
+    expect(mark?.getAttribute('dir')).toBe('ltr');
+    expect(mark?.style.unicodeBidi).toBe('isolate');
     // Logical text order is preserved: preceding Persian substring then the match.
     expect(heading?.textContent).toContain('نمودار فلوچارت (Mermaid Diagram)');
     expect(mark?.previousSibling?.textContent?.endsWith('(')).toBe(true);

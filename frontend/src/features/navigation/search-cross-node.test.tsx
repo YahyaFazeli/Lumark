@@ -1,4 +1,6 @@
 import React, { useRef } from 'react';
+import fs from 'fs';
+import path from 'path';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { findMatches } from './searchIndexer';
@@ -193,6 +195,105 @@ describe('Cross-Node Search & Multi-Element Highlighting', () => {
       expect(container.querySelectorAll('mark').length).toBe(0);
       expect(container.innerHTML).toBe(originalHTML);
     });
+
+    it('highlights English word inside Persian RTL paragraph with bidi isolation and single normalized mark element', () => {
+      container.innerHTML = '<p dir="rtl">شاخه main میشوند</p>';
+      const originalHTML = container.innerHTML;
+
+      const matches = findMatches(container, 'main');
+      expect(matches).toHaveLength(1);
+      expect(matches[0].text).toBe('main');
+
+      applyHighlights(container, matches, 0);
+
+      // Verify there is ONLY ONE <mark class="search-match"> wrapping "main"
+      const marks = container.querySelectorAll<HTMLElement>('mark.search-match');
+      expect(marks).toHaveLength(1);
+
+      const mark = marks[0];
+      // Assert exact text "main"
+      expect(mark.textContent).toBe('main');
+
+      // Assert text inside <mark> is normalized to a single text node
+      expect(mark.childNodes.length).toBe(1);
+      expect(mark.childNodes[0].nodeType).toBe(Node.TEXT_NODE);
+      expect(mark.childNodes[0].nodeValue).toBe('main');
+
+      // Assert pure LTR English word has dir="ltr" to prevent bidi character reversal
+      expect(mark.getAttribute('dir')).toBe('ltr');
+
+      // Assert CSS classes
+      expect(mark.classList.contains('search-match')).toBe(true);
+      expect(mark.classList.contains('search-highlight')).toBe(true);
+      expect(mark.classList.contains('active')).toBe(true);
+
+      // Assert inline CSS properties
+      expect(mark.style.display).toBe('inline');
+      expect(mark.style.direction).toBe('inherit');
+      expect(mark.style.unicodeBidi).toBe('isolate');
+
+      // Assert surrounding Persian text is preserved in natural order
+      expect(container.textContent).toBe('شاخه main میشوند');
+      expect(mark.previousSibling?.textContent).toBe('شاخه ');
+      expect(mark.nextSibling?.textContent).toBe(' میشوند');
+
+      // Clear highlights and verify restoration
+      clearHighlights(container);
+      expect(container.querySelectorAll('mark')).toHaveLength(0);
+      expect(container.innerHTML).toBe(originalHTML);
+    });
+
+    it('normalizes and highlights English word when text node was previously split in RTL paragraph', () => {
+      // Simulate previously split text nodes: "شاخه ma" and "in میشوند"
+      const p = document.createElement('p');
+      p.setAttribute('dir', 'rtl');
+      const textNode1 = document.createTextNode('شاخه ma');
+      const textNode2 = document.createTextNode('in میشوند');
+      p.appendChild(textNode1);
+      p.appendChild(textNode2);
+      container.appendChild(p);
+
+      const matches = findMatches(container, 'main');
+      expect(matches).toHaveLength(1);
+      expect(matches[0].startNode).toBe(textNode1);
+      expect(matches[0].endNode).toBe(textNode2);
+
+      applyHighlights(container, matches, 0);
+
+      // Must result in exactly ONE mark element
+      const marks = container.querySelectorAll<HTMLElement>('mark.search-match');
+      expect(marks).toHaveLength(1);
+
+      const mark = marks[0];
+      expect(mark.textContent).toBe('main');
+
+      // Must normalize child nodes into a SINGLE text node
+      expect(mark.childNodes.length).toBe(1);
+      expect(mark.childNodes[0].nodeType).toBe(Node.TEXT_NODE);
+      expect(mark.childNodes[0].nodeValue).toBe('main');
+      expect(mark.getAttribute('dir')).toBe('ltr');
+      expect(mark.style.unicodeBidi).toBe('isolate');
+      expect(mark.style.direction).toBe('inherit');
+
+      clearHighlights(container);
+      expect(container.querySelectorAll('mark')).toHaveLength(0);
+      expect(container.textContent).toBe('شاخه main میشوند');
+    });
+
+    it('verifies search.css enforces unicode-bidi: isolate and direction: inherit on .search-match', () => {
+      const cssPath = path.resolve(__dirname, 'search.css');
+      const css = fs.readFileSync(cssPath, 'utf-8');
+
+      // Check .search-match rule
+      expect(css).toMatch(/\.search-match[^\{]*\{[^}]*unicode-bidi:\s*isolate;/);
+      expect(css).toMatch(/\.search-match[^\{]*\{[^}]*display:\s*inline;/);
+      expect(css).toMatch(/\.search-match[^\{]*\{[^}]*direction:\s*inherit;/);
+
+      // Check active rule
+      expect(css).toMatch(/\.search-match\.active[^\{]*\{[^}]*unicode-bidi:\s*isolate;/);
+      expect(css).toMatch(/\.search-match\.active[^\{]*\{[^}]*display:\s*inline;/);
+      expect(css).toMatch(/\.search-match\.active[^\{]*\{[^}]*direction:\s*inherit;/);
+    });
   });
 
   describe('useSearch Hook with Cross-Node Queries', () => {
@@ -329,6 +430,45 @@ Another paragraph with **across** tags highlighted.
       expect(
         screen.getByTestId('markdown-content').querySelectorAll('mark[data-search-match="true"]').length
       ).toBe(0);
+    });
+
+    it('finds and highlights English word in Persian RTL paragraph rendered via MarkdownViewer with correct mark and bidi isolation', () => {
+      const markdown = `
+# سند تست
+
+شاخه main میشوند
+`;
+
+      render(
+        <MarkdownViewer
+          document={{
+            filename: 'rtl-bidi.md',
+            filePath: '/test/rtl-bidi.md',
+            content: markdown,
+          }}
+        />
+      );
+
+      // Open search bar
+      fireEvent.click(screen.getByTestId('doc-search-toggle'));
+      const input = screen.getByTestId('search-input') as HTMLInputElement;
+
+      act(() => {
+        fireEvent.change(input, { target: { value: 'main' } });
+      });
+
+      expect(screen.getByTestId('search-counter')).toHaveTextContent('1 of 1');
+      const marks = screen
+        .getByTestId('markdown-content')
+        .querySelectorAll<HTMLElement>('mark.search-match');
+      expect(marks.length).toBe(1);
+      expect(marks[0].textContent).toBe('main');
+      expect(marks[0].childNodes.length).toBe(1);
+      expect(marks[0].childNodes[0].nodeType).toBe(Node.TEXT_NODE);
+      expect(marks[0].getAttribute('dir')).toBe('ltr');
+      expect(marks[0].style.unicodeBidi).toBe('isolate');
+      expect(marks[0].style.display).toBe('inline');
+      expect(marks[0].style.direction).toBe('inherit');
     });
   });
 });

@@ -129,18 +129,18 @@ input[type="text"].search-bar-input {
   color: var(--danger);
 }
 
-/* Document Match Highlighting (bidi-transparent: no dir attribute, no
-   isolation box on the mark, so the browser's bidi algorithm keeps treating
-   the line as one continuous run and reorders naturally) */
+/* Document Match Highlighting (bidi isolation: unicode-bidi: isolate prevents
+   highlighted text from merging with or being reordered by surrounding bidi text) */
 mark,
 mark.search-match,
 .search-match,
 mark.search-highlight,
 .search-highlight {
   display: inline;
+  direction: inherit;
+  unicode-bidi: isolate;
   padding: 0;
   margin: 0;
-  unicode-bidi: normal;
   background-color: rgba(250, 204, 21, 0.45);
   color: inherit;
   border: none;
@@ -153,9 +153,10 @@ mark.search-match.active,
 mark.search-highlight.active,
 .search-highlight.active {
   display: inline;
+  direction: inherit;
+  unicode-bidi: isolate;
   padding: 0;
   margin: 0;
-  unicode-bidi: normal;
   background-color: #f97316;
   color: #000000;
   border: none;

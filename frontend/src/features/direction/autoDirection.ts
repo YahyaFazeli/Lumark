@@ -21,6 +21,51 @@ export const RTL_SCRIPT_REGEX =
 // Regular expression matching any Unicode Letter
 export const UNICODE_LETTER_REGEX = /\p{L}/u;
 
+// Regular expression matching short prefixes and bullets (e.g., "Phase 6", "1.", "8.", "○", "•", "-")
+export const SHORT_PREFIX_OR_BULLET_REGEX =
+  /^\s*[\p{Emoji}\p{Symbol}]*\s*(?:[•○●\-\*\+–—►▪▸✓✔]|(?:\d+[\.\)]\s*)?(?:Phase|Step|Part|Section|Chapter|Level|Release|Task|Epic|Sprint)\b|\d+[\.\)]|#+)/iu;
+
+// Regular expression matching bullet point markers, numbered list prefixes, and markdown headings
+export const LIST_MARKER_REGEX =
+  /^\s*(?:[\p{Emoji}\p{Symbol}\s]|[•○●\-\*\+–—►▪▸✓✔]|\d+[\.\)]|#+)+/u;
+
+/**
+ * Strips bullet markers, list numbering, and markdown hash prefixes from text.
+ */
+export function stripListMarkers(text: string): string {
+  return text.replace(LIST_MARKER_REGEX, '');
+}
+
+export const ARABIC_PERSIAN_UNICODE_REGEX =
+  /[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/g;
+
+export const LTR_LATIN_ALPHABET_REGEX = /[a-zA-Z]/g;
+
+export const HEADING_TAGS = new Set([
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'heading',
+]);
+
+export const SHORT_BLOCK_TAGS = new Set([
+  'li',
+  'td',
+  'th',
+  'list-item',
+  'cell',
+  'table-cell',
+]);
+
+export const LONG_BLOCK_TAGS = new Set([
+  'p',
+  'blockquote',
+  'paragraph',
+]);
+
 export interface DetectDirectionOptions {
   fallback?: Direction | null;
   stripHtml?: boolean;
@@ -59,26 +104,88 @@ export function detectFirstStrongDirection(
 }
 
 /**
- * Smart Direction Detection Utility using character dominance counting (RTL vs LTR).
+ * Smart Direction Detection Utility using character dominance counting with
+ * block-type differentiation and document base direction awareness.
  *
  * @param text The input text string to evaluate.
  * @param docDefaultDir The document's default direction ('rtl' | 'ltr') when counts tie or both are 0.
- * @returns 'rtl' if RTL characters dominate, 'ltr' if LTR characters dominate, or docDefaultDir on tie/empty.
+ * @param tag Optional HTML tag name or block type (e.g. 'p', 'h1'-'h6', 'li', 'td', 'th', 'blockquote').
+ * @returns 'rtl' if RTL characters dominate or document default prevails, 'ltr' otherwise.
  */
 export function getTextDirection(
   text: string,
-  docDefaultDir: Direction = 'ltr'
+  docDefaultDir: Direction = 'ltr',
+  tag?: string
 ): Direction {
   const safeText = text || '';
-  const rtlChars = (safeText.match(/[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/g) || []).length;
-  const ltrChars = (safeText.match(/[a-zA-Z]/g) || []).length;
+  const cleanText = stripListMarkers(safeText);
+  const rtlChars = (cleanText.match(ARABIC_PERSIAN_UNICODE_REGEX) || []).length;
+  const ltrChars = (cleanText.match(LTR_LATIN_ALPHABET_REGEX) || []).length;
+  const normalizedTag = (tag || '').toLowerCase().trim();
 
+  // 1. Headings (<h1> through <h6>)
+  // In an RTL document, headings belong to the document context and align RTL (e.g. "Local Admin")
+  if (HEADING_TAGS.has(normalizedTag)) {
+    if (docDefaultDir === 'rtl') {
+      return 'rtl';
+    }
+    // In an LTR document:
+    // If Persian dominates (e.g. "عنوان اصلی با Docker"): align RTL
+    if (rtlChars > ltrChars) {
+      return 'rtl';
+    }
+    if (ltrChars > 0) {
+      return 'ltr';
+    }
+    return docDefaultDir;
+  }
+
+  // 2. Short Blocks (<li>, <td>, <th>)
+  if (SHORT_BLOCK_TAGS.has(normalizedTag)) {
+    if (docDefaultDir === 'rtl') {
+      // If docDefaultDir === 'rtl' and text contains at least one Persian/Arabic character, force 'rtl'
+      if (rtlChars > 0) {
+        return 'rtl';
+      }
+      // If docDefaultDir === 'rtl' and text is purely English (no Persian), keep it 'ltr'
+      if (ltrChars > 0 && rtlChars === 0) {
+        return 'ltr';
+      }
+      // Neither (e.g., numbers only "12345", emojis, symbols): fallback to docDefaultDir ('rtl')
+      return docDefaultDir;
+    } else {
+      // If docDefaultDir === 'ltr' and text contains at least one Latin character, force 'ltr'
+      if (ltrChars > 0) {
+        return 'ltr';
+      }
+      // If docDefaultDir === 'ltr' and text is purely Persian, keep it 'rtl'
+      if (rtlChars > 0 && ltrChars === 0) {
+        return 'rtl';
+      }
+      // Neither: fallback to docDefaultDir ('ltr')
+      return docDefaultDir;
+    }
+  }
+
+  // 3. Long Blocks (<p>, <blockquote>) & Default Majority-Character-Count Logic
+  // For long blocks (<p>, <blockquote>): Keep the majority-character-count logic
   if (rtlChars > ltrChars) {
     return 'rtl';
   }
+
+  // If no tag is specified, preserve backward compatibility for short prefixes in RTL documents
+  if (!normalizedTag && docDefaultDir === 'rtl' && SHORT_PREFIX_OR_BULLET_REGEX.test(safeText)) {
+    const isShortBlock = safeText.length <= 100 || safeText.split(/\s+/).length <= 15;
+    if (isShortBlock) {
+      return 'rtl';
+    }
+  }
+
   if (ltrChars > rtlChars) {
     return 'ltr';
   }
+
+  // If rtlChars === ltrChars or both are 0 (e.g., numbers, emojis, punctuation): fallback to docDefaultDir
   return docDefaultDir;
 }
 
@@ -124,7 +231,7 @@ export function applyDominanceDirection(
     }
 
     const text = getBlockProseText(el);
-    const dir = getTextDirection(text, docDefaultDir);
+    const dir = getTextDirection(text, docDefaultDir, tag);
     el.setAttribute('dir', dir);
     el.style.textAlign = dir === 'rtl' ? 'right' : 'left';
   });
