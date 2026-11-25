@@ -4,7 +4,11 @@ import path from 'path';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { findMatches } from './searchIndexer';
-import { applyHighlights, clearHighlights } from './searchHighlighter';
+import {
+  applyHighlights,
+  clearHighlights,
+  runSearch,
+} from './searchHighlighter';
 import { useSearch } from './useSearch';
 import { MarkdownViewer } from '../rendering/MarkdownViewer';
 
@@ -219,17 +223,16 @@ describe('Cross-Node Search & Multi-Element Highlighting', () => {
       expect(mark.childNodes[0].nodeType).toBe(Node.TEXT_NODE);
       expect(mark.childNodes[0].nodeValue).toBe('main');
 
-      // Assert pure LTR English word has dir="ltr" to prevent bidi character reversal
-      expect(mark.getAttribute('dir')).toBe('ltr');
+      // Assert no forced dir="ltr" or unicode-bidi: isolate on <mark>
+      expect(mark.getAttribute('dir')).toBeNull();
 
       // Assert CSS classes and active state
       expect(mark.classList.contains('search-match')).toBe(true);
       expect(mark.classList.contains('active')).toBe(true);
 
-      // Assert inline CSS properties
-      expect(mark.style.display).toBe('inline');
-      expect(mark.style.direction).toBe('ltr');
-      expect(mark.style.unicodeBidi).toBe('isolate');
+      // Assert no inline bidi overrides
+      expect(mark.style.direction).toBe('');
+      expect(mark.style.unicodeBidi).toBe('');
 
       // Assert surrounding Persian text is preserved in natural order
       expect(container.textContent).toBe('شاخه main می‌شوند');
@@ -271,12 +274,10 @@ describe('Cross-Node Search & Multi-Element Highlighting', () => {
       expect(mark.childNodes[0].nodeType).toBe(Node.TEXT_NODE);
       expect(mark.childNodes[0].nodeValue).toBe('main');
 
-      // Assert that mark.getAttribute('dir') === 'ltr'
-      expect(mark.getAttribute('dir')).toBe('ltr');
-
-      // Assert that mark.style.direction === 'ltr'
-      expect(mark.style.direction).toBe('ltr');
-      expect(mark.style.unicodeBidi).toBe('isolate');
+      // Assert no forced dir="ltr" or unicode-bidi: isolate on <mark>
+      expect(mark.getAttribute('dir')).toBeNull();
+      expect(mark.style.direction).toBe('');
+      expect(mark.style.unicodeBidi).toBe('');
 
       // Assert that the DOM is EXACTLY:
       // <p dir="rtl">تغییرات مستقیما روی شاخه <mark class="search-match..." dir="ltr">main</mark> میشوند.</p>
@@ -331,14 +332,14 @@ describe('Cross-Node Search & Multi-Element Highlighting', () => {
       expect(mark).toBeDefined();
 
       // assert that the DOM is EXACTLY:
-      // <p dir="rtl">تغییرات روی شاخه <mark class="search-match" dir="ltr">mai</mark>n میشوند</p>
+      // <p dir="rtl">تغییرات روی شاخه <mark class="search-match active" data-search-match="true" data-match-index="0" data-search-active="true">mai</mark>n میشوند</p>
       expect(p.childNodes.length).toBe(3);
       expect(p.childNodes[0].nodeType).toBe(Node.TEXT_NODE);
       expect(p.childNodes[0].nodeValue).toBe('تغییرات روی شاخه ');
       expect(p.childNodes[1]).toBe(mark);
       expect(mark.tagName).toBe('MARK');
       expect(mark.classList.contains('search-match')).toBe(true);
-      expect(mark.getAttribute('dir')).toBe('ltr');
+      expect(mark.getAttribute('dir')).toBeNull();
       expect(mark.textContent).toBe('mai');
       expect(p.childNodes[2].nodeType).toBe(Node.TEXT_NODE);
       expect(p.childNodes[2].nodeValue).toBe('n میشوند');
@@ -370,45 +371,37 @@ describe('Cross-Node Search & Multi-Element Highlighting', () => {
 
       applyHighlights(container, matches, 0);
 
-      // Must result in exactly ONE mark element
-      const marks = container.querySelectorAll<HTMLElement>('mark.search-match');
-      expect(marks).toHaveLength(1);
-
-      const mark = marks[0];
-      expect(mark.textContent).toBe('main');
-
-      // Must normalize child nodes into a SINGLE text node
-      expect(mark.childNodes.length).toBe(1);
-      expect(mark.childNodes[0].nodeType).toBe(Node.TEXT_NODE);
-      expect(mark.childNodes[0].nodeValue).toBe('main');
-      expect(mark.getAttribute('dir')).toBe('ltr');
-      expect(mark.style.unicodeBidi).toBe('isolate');
-      expect(mark.style.direction).toBe('ltr');
+      // Cross-node fallback wraps each text node slice with the same data-match-index
+      const marks = container.querySelectorAll<HTMLElement>('mark.search-match[data-match-index="0"]');
+      expect(marks.length).toBeGreaterThanOrEqual(1);
+      expect(Array.from(marks).map((m) => m.textContent).join('')).toBe('main');
+      marks.forEach((m) => {
+        expect(m.getAttribute('dir')).toBeNull();
+        expect(m.style.unicodeBidi).toBe('');
+        expect(m.style.direction).toBe('');
+      });
 
       clearHighlights(container);
       expect(container.querySelectorAll('mark')).toHaveLength(0);
       expect(container.textContent).toBe('شاخه main میشوند');
     });
 
-    it('verifies search.css enforces unicode-bidi: isolate and direction: ltr without direction: inherit', () => {
+    it('verifies search.css uses ::highlight rules without bare mark selector, direction: ltr, or unicode-bidi: isolate', () => {
       const cssPath = path.resolve(__dirname, 'search.css');
       const css = fs.readFileSync(cssPath, 'utf-8');
 
-      // Check .search-match rule has unicode-bidi: isolate, display: inline, and direction: ltr
-      expect(css).toMatch(/\.search-match[^\{]*\{[^}]*unicode-bidi:\s*isolate;/);
-      expect(css).toMatch(/\.search-match[^\{]*\{[^}]*display:\s*inline;/);
-      expect(css).toMatch(/\.search-match[^\{]*\{[^}]*direction:\s*ltr;/);
-      // Crucial: Must NOT contain direction: inherit
-      expect(css).not.toMatch(/\.search-match[^\{]*\{[^}]*direction:\s*inherit;/);
+      // Must contain CSS Custom Highlight API rules
+      expect(css).toContain('::highlight(search-match)');
+      expect(css).toContain('::highlight(search-active)');
 
-      // Check explicit LTR direction rules
-      expect(css).toMatch(/\.search-match\[dir="ltr"\][^\{]*\{[^}]*direction:\s*ltr;/);
+      // Must NOT contain bare `mark` selector in highlight rules
+      expect(css).not.toMatch(/^\s*mark\s*,/m);
 
-      // Check active rule has direction: ltr and unicode-bidi: isolate
-      expect(css).toMatch(/\.search-match\.active[^\{]*\{[^}]*unicode-bidi:\s*isolate;/);
-      expect(css).toMatch(/\.search-match\.active[^\{]*\{[^}]*display:\s*inline;/);
-      expect(css).toMatch(/\.search-match\.active[^\{]*\{[^}]*direction:\s*ltr;/);
-      expect(css).not.toMatch(/\.search-match\.active[^\{]*\{[^}]*direction:\s*inherit;/);
+      // Must NOT contain direction: ltr or unicode-bidi: isolate on match highlights
+      expect(css).not.toMatch(/\.search-match[^\{]*\{[^}]*unicode-bidi:\s*isolate;/);
+      expect(css).not.toMatch(/\.search-match[^\{]*\{[^}]*direction:\s*ltr;/);
+      expect(css).not.toMatch(/\.search-match\.active[^\{]*\{[^}]*unicode-bidi:\s*isolate;/);
+      expect(css).not.toMatch(/\.search-match\.active[^\{]*\{[^}]*direction:\s*ltr;/);
     });
 
     it('handles search across pre-existing highlights by clearing previous highlights first', () => {
@@ -416,11 +409,8 @@ describe('Cross-Node Search & Multi-Element Highlighting', () => {
       container.innerHTML =
         '<p dir="rtl">شاخه ma<mark class="search-match active" data-search-match="true">in</mark> میشوند</p>';
 
-      clearHighlights(container);
-      const matches = findMatches(container, 'main');
+      const { matches } = runSearch(container, 'main');
       expect(matches).toHaveLength(1);
-
-      applyHighlights(container, matches, 0);
 
       const marks = container.querySelectorAll<HTMLElement>('mark.search-match');
       // Must be EXACTLY ONE mark, never nested or multiple
@@ -428,8 +418,8 @@ describe('Cross-Node Search & Multi-Element Highlighting', () => {
       const mark = marks[0];
       expect(mark.textContent).toBe('main');
       expect(mark.childNodes.length).toBe(1);
-      expect(mark.getAttribute('dir')).toBe('ltr');
-      expect(mark.style.direction).toBe('ltr');
+      expect(mark.getAttribute('dir')).toBeNull();
+      expect(mark.style.direction).toBe('');
       expect(mark.classList.contains('active')).toBe(true);
       expect(mark.querySelectorAll('mark')).toHaveLength(0);
     });
@@ -477,26 +467,29 @@ describe('Cross-Node Search & Multi-Element Highlighting', () => {
       expect(screen.getByTestId('match-count')).toHaveTextContent('2');
       expect(screen.getByTestId('current-index')).toHaveTextContent('0');
 
-      const marks = screen.getByTestId('doc-container').querySelectorAll('mark[data-search-match="true"]');
-      expect(marks.length).toBe(2);
-      expect(marks[0].classList.contains('active')).toBe(true);
-      expect(marks[1].classList.contains('active')).toBe(false);
+      const docContainer = screen.getByTestId('doc-container');
+      const match0Marks = docContainer.querySelectorAll('mark[data-search-match="true"][data-match-index="0"]');
+      const match1Marks = docContainer.querySelectorAll('mark[data-search-match="true"][data-match-index="1"]');
+      expect(match0Marks.length).toBeGreaterThanOrEqual(1);
+      expect(match1Marks.length).toBeGreaterThanOrEqual(1);
+      expect(match0Marks[0].classList.contains('active')).toBe(true);
+      expect(match1Marks[0].classList.contains('active')).toBe(false);
 
       // Next match
       act(() => {
         fireEvent.click(screen.getByTestId('btn-next'));
       });
       expect(screen.getByTestId('current-index')).toHaveTextContent('1');
-      expect(marks[0].classList.contains('active')).toBe(false);
-      expect(marks[1].classList.contains('active')).toBe(true);
+      expect(match0Marks[0].classList.contains('active')).toBe(false);
+      expect(match1Marks[0].classList.contains('active')).toBe(true);
 
       // Previous match
       act(() => {
         fireEvent.click(screen.getByTestId('btn-prev'));
       });
       expect(screen.getByTestId('current-index')).toHaveTextContent('0');
-      expect(marks[0].classList.contains('active')).toBe(true);
-      expect(marks[1].classList.contains('active')).toBe(false);
+      expect(match0Marks[0].classList.contains('active')).toBe(true);
+      expect(match1Marks[0].classList.contains('active')).toBe(false);
 
       // Close search cleans up
       act(() => {
@@ -540,8 +533,9 @@ Another paragraph with **across** tags highlighted.
       expect(screen.getByTestId('search-counter')).toHaveTextContent('1 of 1');
       const marks1 = screen
         .getByTestId('markdown-content')
-        .querySelectorAll('mark[data-search-match="true"]');
-      expect(marks1.length).toBe(1);
+        .querySelectorAll('mark[data-search-match="true"][data-match-index="0"]');
+      expect(marks1.length).toBeGreaterThanOrEqual(1);
+      expect(Array.from(marks1).map((m) => m.textContent).join('')).toBe('Search across');
       expect(marks1[0].classList.contains('active')).toBe(true);
 
       // 2. Search for "across tags"
@@ -550,10 +544,14 @@ Another paragraph with **across** tags highlighted.
       });
 
       expect(screen.getByTestId('search-counter')).toHaveTextContent('1 of 2');
-      const marks2 = screen
+      const marks2Idx0 = screen
         .getByTestId('markdown-content')
-        .querySelectorAll('mark[data-search-match="true"]');
-      expect(marks2.length).toBe(2);
+        .querySelectorAll('mark[data-search-match="true"][data-match-index="0"]');
+      const marks2Idx1 = screen
+        .getByTestId('markdown-content')
+        .querySelectorAll('mark[data-search-match="true"][data-match-index="1"]');
+      expect(marks2Idx0.length).toBeGreaterThanOrEqual(1);
+      expect(marks2Idx1.length).toBeGreaterThanOrEqual(1);
 
       // Press Enter to cycle to second match
       act(() => {
@@ -604,10 +602,165 @@ Another paragraph with **across** tags highlighted.
       expect(marks[0].textContent).toBe('main');
       expect(marks[0].childNodes.length).toBe(1);
       expect(marks[0].childNodes[0].nodeType).toBe(Node.TEXT_NODE);
-      expect(marks[0].getAttribute('dir')).toBe('ltr');
-      expect(marks[0].style.unicodeBidi).toBe('isolate');
-      expect(marks[0].style.display).toBe('inline');
-      expect(marks[0].style.direction).toBe('ltr');
+      expect(marks[0].getAttribute('dir')).toBeNull();
+      expect(marks[0].style.unicodeBidi).toBe('');
+      expect(marks[0].style.direction).toBe('');
+    });
+  });
+
+  describe('Mandatory Bidi, Multi-Keystroke, Cross-Tag, and Native Mark Regression Suite', () => {
+    it('1. The "main" Test: highlights "ma" then "main" in RTL paragraph without reversing or shifting to Persian words', () => {
+      container.innerHTML = '<p dir="rtl">تغییرات روی شاخه main میشوند</p>';
+
+      // Search "ma"
+      const resMa = runSearch(container, 'ma');
+      expect(resMa.matches).toHaveLength(1);
+      expect(resMa.matches[0].text).toBe('ma');
+      const marksMa = container.querySelectorAll('mark[data-search-match="true"]');
+      expect(marksMa).toHaveLength(1);
+      expect(marksMa[0].textContent).toBe('ma');
+
+      // Search "main"
+      const resMain = runSearch(container, 'main');
+      expect(resMain.matches).toHaveLength(1);
+      expect(resMain.matches[0].text).toBe('main');
+      const marksMain = container.querySelectorAll('mark[data-search-match="true"]');
+      expect(marksMain).toHaveLength(1);
+      expect(marksMain[0].textContent).toBe('main');
+      expect(marksMain[0].textContent).not.toBe('inma');
+      expect(marksMain[0].previousSibling?.textContent).toBe('تغییرات روی شاخه ');
+      expect(marksMain[0].nextSibling?.textContent).toBe(' میشوند');
+    });
+
+    it('1b. The "main" Test (CSS Custom Highlight API): registers exact Range without mutating DOM', () => {
+      container.innerHTML = '<p dir="rtl">تغییرات روی شاخه main میشوند</p>';
+      const registry = new Map<string, unknown>();
+      class MockHighlight {
+        ranges: AbstractRange[];
+        priority?: number;
+        constructor(...ranges: AbstractRange[]) {
+          this.ranges = ranges;
+        }
+      }
+      const origCSS = (globalThis as { CSS?: unknown }).CSS;
+      const origHighlight = (globalThis as { Highlight?: unknown }).Highlight;
+      (globalThis as { CSS: unknown }).CSS = { highlights: registry };
+      (globalThis as { Highlight: unknown }).Highlight = MockHighlight;
+
+      try {
+        const resMa = runSearch(container, 'ma');
+        expect(resMa.activeTarget).toBeInstanceOf(Range);
+        expect((resMa.activeTarget as Range).toString()).toBe('ma');
+        expect(container.querySelectorAll('mark')).toHaveLength(0);
+
+        const resMain = runSearch(container, 'main');
+        expect(resMain.activeTarget).toBeInstanceOf(Range);
+        expect((resMain.activeTarget as Range).toString()).toBe('main');
+        expect(container.querySelectorAll('mark')).toHaveLength(0);
+        expect(registry.has('search-match')).toBe(true);
+        expect(registry.has('search-active')).toBe(true);
+      } finally {
+        (globalThis as { CSS?: unknown }).CSS = origCSS;
+        (globalThis as { Highlight?: unknown }).Highlight = origHighlight;
+      }
+    });
+
+    it('2. The Multi-Keystroke Test: m -> ma -> mai -> main produces zero errors and exactly ONE highlight', () => {
+      const KeystrokeComponent: React.FC = () => {
+        const docRef = useRef<HTMLDivElement>(null);
+        const search = useSearch({ containerRef: docRef, initialOpen: true });
+        return (
+          <div>
+            <div ref={docRef} data-testid="rtl-doc">
+              <p dir="rtl">تغییرات روی شاخه main میشوند</p>
+            </div>
+            <input
+              data-testid="query-input"
+              value={search.query}
+              onChange={(e) => search.setQuery(e.target.value)}
+            />
+            <span data-testid="total-matches">{search.totalMatches}</span>
+          </div>
+        );
+      };
+
+      render(<KeystrokeComponent />);
+      const input = screen.getByTestId('query-input');
+      const doc = screen.getByTestId('rtl-doc');
+
+      for (const step of ['m', 'ma', 'mai', 'main']) {
+        act(() => {
+          fireEvent.change(input, { target: { value: step } });
+        });
+      }
+
+      expect(screen.getByTestId('total-matches')).toHaveTextContent('1');
+      const marks = doc.querySelectorAll('mark[data-search-match="true"]');
+      expect(marks).toHaveLength(1);
+      expect(marks[0].textContent).toBe('main');
+    });
+
+    it('3. Cross-Tag Test: searches for "main" in **ma**in and highlights as one logical match', () => {
+      render(
+        <MarkdownViewer
+          document={{
+            filename: 'cross-tag.md',
+            filePath: '/test/cross-tag.md',
+            content: '**ma**in',
+          }}
+        />
+      );
+
+      fireEvent.click(screen.getByTestId('doc-search-toggle'));
+      const input = screen.getByTestId('search-input');
+
+      act(() => {
+        fireEvent.change(input, { target: { value: 'main' } });
+      });
+
+      expect(screen.getByTestId('search-counter')).toHaveTextContent('1 of 1');
+      const marks = screen
+        .getByTestId('markdown-content')
+        .querySelectorAll('mark[data-search-match="true"]');
+      expect(marks.length).toBeGreaterThanOrEqual(1);
+      // All mark slices belong to match index 0 (one logical match) and spell "main"
+      marks.forEach((m) => {
+        expect(m.getAttribute('data-match-index')).toBe('0');
+        expect(m.classList.contains('active')).toBe(true);
+      });
+      expect(Array.from(marks).map((m) => m.textContent).join('')).toBe('main');
+    });
+
+    it('4. Document Mark Test: native <mark>native</mark> is NOT styled or cleared by search', () => {
+      container.innerHTML = '<p>This has <mark>native</mark> and target text.</p>';
+      const nativeMark = container.querySelector('mark')!;
+
+      runSearch(container, 'target');
+
+      // Native mark must not gain search classes or attributes
+      expect(nativeMark.classList.contains('search-match')).toBe(false);
+      expect(nativeMark.classList.contains('active')).toBe(false);
+      expect(nativeMark.getAttribute('data-search-match')).toBeNull();
+
+      // Search mark exists only on "target"
+      const searchMarks = container.querySelectorAll('mark[data-search-match="true"]');
+      expect(searchMarks).toHaveLength(1);
+      expect(searchMarks[0].textContent).toBe('target');
+
+      // Clearing search highlights leaves native <mark> intact
+      clearHighlights(container);
+      expect(container.querySelectorAll('mark')).toHaveLength(1);
+      expect(container.querySelector('mark')?.textContent).toBe('native');
+    });
+
+    it('5. Block Sentinel Test: prevents false cross-paragraph matches', () => {
+      container.innerHTML = '<p>Hello</p><p>World</p>';
+      expect(findMatches(container, 'HelloWorld')).toHaveLength(0);
+      expect(findMatches(container, 'Hello World')).toHaveLength(0);
+      const matches = findMatches(container, 'World');
+      expect(matches).toHaveLength(1);
+      expect(matches[0].startOffset).toBe(0);
+      expect(matches[0].endOffset).toBe(5);
     });
   });
 });

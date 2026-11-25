@@ -171,16 +171,19 @@ input[type="text"].search-bar-input {
   color: var(--danger);
 }
 
-/* Document Match Highlighting (bidi isolation: unicode-bidi: isolate and direction: ltr
-   prevent highlighted LTR text from merging with or being reordered by surrounding RTL text) */
-mark,
-mark.search-match,
-.search-match,
-mark.search-highlight,
-.search-highlight {
+/* Document Match Highlighting */
+::highlight(search-match) {
+  background-color: rgba(250, 204, 21, 0.45);
+  color: inherit;
+}
+
+::highlight(search-active) {
+  background-color: #f97316;
+  color: #000000;
+}
+
+.search-match {
   display: inline;
-  direction: ltr;
-  unicode-bidi: isolate;
   padding: 0;
   margin: 0;
   background-color: rgba(250, 204, 21, 0.45);
@@ -190,20 +193,8 @@ mark.search-highlight,
   font-weight: inherit;
 }
 
-mark.search-match[dir="ltr"],
-.search-match[dir="ltr"],
-mark.search-highlight[dir="ltr"],
-.search-highlight[dir="ltr"] {
-  direction: ltr;
-}
-
-mark.search-match.active,
-.search-match.active,
-mark.search-highlight.active,
-.search-highlight.active {
+.search-match.active {
   display: inline;
-  direction: ltr;
-  unicode-bidi: isolate;
   padding: 0;
   margin: 0;
   background-color: #f97316;
@@ -219,8 +210,7 @@ mark.search-highlight.active,
     display: none !important;
   }
 
-  .search-match,
-  .search-highlight {
+  .search-match {
     background-color: transparent !important;
     outline: none !important;
     color: inherit !important;

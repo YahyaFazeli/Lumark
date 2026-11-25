@@ -1,7 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
 import { SearchMatch } from './types';
-import { findMatches } from './searchIndexer';
-import { applyHighlights, clearHighlights, updateActiveHighlight } from './searchHighlighter';
+import {
+  runSearch,
+  clearHighlights,
+  updateActiveHighlight,
+  scrollToMatch,
+} from './searchHighlighter';
 
 export interface UseSearchOptions {
   containerRef: React.RefObject<HTMLElement | null>;
@@ -34,35 +38,35 @@ export function useSearch({
 }: UseSearchOptions): UseSearchResult {
   const [isOpen, setIsOpen] = useState<boolean>(initialOpen);
   const [query, setQueryState] = useState<string>('');
+  const [effectiveQuery, setEffectiveQuery] = useState<string>('');
   const [caseSensitive, setCaseSensitive] = useState<boolean>(false);
   const [matches, setMatches] = useState<SearchMatch[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
 
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  const performSearch = useCallback(
-    (searchQuery: string, isCaseSens: boolean) => {
-      const container = containerRef.current;
-      if (!container || !searchQuery.trim()) {
-        clearHighlights(container);
-        setMatches([]);
-        setCurrentIndex(0);
-        return;
-      }
-
-      // Clear any prior highlights before indexing to ensure clean text nodes
+  // Run synchronous search pipeline in useLayoutEffect so React DOM commits
+  // are finalized before indexing and painting highlights.
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    if (!container || !effectiveQuery.trim()) {
       clearHighlights(container);
-
-      const found = findMatches(container, searchQuery, { caseSensitive: isCaseSens });
-      setMatches(found);
+      setMatches([]);
       setCurrentIndex(0);
+      return;
+    }
 
-      if (found.length > 0) {
-        applyHighlights(container, found, 0);
-      }
-    },
-    [containerRef]
-  );
+    const { matches: found, activeTarget } = runSearch(container, effectiveQuery, {
+      caseSensitive,
+      activeIndex: 0,
+    });
+    setMatches(found);
+    setCurrentIndex(0);
+
+    if (activeTarget) {
+      scrollToMatch(container, activeTarget);
+    }
+  }, [containerRef, effectiveQuery, caseSensitive]);
 
   const setQuery = useCallback(
     (newQuery: string) => {
@@ -74,34 +78,34 @@ export function useSearch({
 
       if (debounceMs > 0) {
         debounceTimerRef.current = setTimeout(() => {
-          performSearch(newQuery, caseSensitive);
+          setEffectiveQuery(newQuery);
         }, debounceMs);
       } else {
-        performSearch(newQuery, caseSensitive);
+        setEffectiveQuery(newQuery);
       }
     },
-    [debounceMs, performSearch, caseSensitive]
+    [debounceMs]
   );
 
   const toggleCaseSensitive = useCallback(() => {
-    setCaseSensitive((prev) => {
-      const next = !prev;
-      performSearch(query, next);
-      return next;
-    });
-  }, [performSearch, query]);
+    setCaseSensitive((prev) => !prev);
+  }, []);
 
   const openSearch = useCallback(() => {
     setIsOpen(true);
     if (query.trim()) {
-      performSearch(query, caseSensitive);
+      setEffectiveQuery(query);
     }
-  }, [caseSensitive, performSearch, query]);
+  }, [query]);
 
   const closeSearch = useCallback(() => {
     setIsOpen(false);
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
     clearHighlights(containerRef.current);
     setQueryState('');
+    setEffectiveQuery('');
     setMatches([]);
     setCurrentIndex(0);
   }, [containerRef]);
@@ -109,16 +113,16 @@ export function useSearch({
   const nextMatch = useCallback(() => {
     if (matches.length === 0) return;
     const next = (currentIndex + 1) % matches.length;
-    updateActiveHighlight(containerRef.current, currentIndex, next);
+    updateActiveHighlight(containerRef.current, currentIndex, next, matches);
     setCurrentIndex(next);
-  }, [containerRef, currentIndex, matches.length]);
+  }, [containerRef, currentIndex, matches]);
 
   const prevMatch = useCallback(() => {
     if (matches.length === 0) return;
     const prev = (currentIndex - 1 + matches.length) % matches.length;
-    updateActiveHighlight(containerRef.current, currentIndex, prev);
+    updateActiveHighlight(containerRef.current, currentIndex, prev, matches);
     setCurrentIndex(prev);
-  }, [containerRef, currentIndex, matches.length]);
+  }, [containerRef, currentIndex, matches]);
 
   // Cleanup highlights on unmount
   useEffect(() => {

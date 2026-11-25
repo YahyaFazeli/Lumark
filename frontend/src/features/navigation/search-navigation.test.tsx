@@ -31,8 +31,10 @@ describe('Search Navigation & Highlighting Engine (US-022.2)', () => {
       const matches = findMatches(container, 'fox');
       expect(matches).toHaveLength(2);
 
-      const marks = applyHighlights(container, matches, 0);
+      const activeMark = applyHighlights(container, matches, 0);
+      const marks = container.querySelectorAll<HTMLElement>('mark[data-search-match="true"]');
       expect(marks).toHaveLength(2);
+      expect(activeMark).toBe(marks[0]);
 
       // Verify first match is active
       expect(marks[0].classList.contains('active')).toBe(true);
@@ -75,8 +77,10 @@ describe('Search Navigation & Highlighting Engine (US-022.2)', () => {
       const matches = findMatches(container, 'cat');
       expect(matches).toHaveLength(3);
 
-      const marks = applyHighlights(container, matches, 1);
+      const activeMark = applyHighlights(container, matches, 1);
+      const marks = container.querySelectorAll<HTMLElement>('mark[data-search-match="true"]');
       expect(marks).toHaveLength(3);
+      expect(activeMark).toBe(marks[1]);
 
       expect(marks[0].getAttribute('data-match-index')).toBe('0');
       expect(marks[1].getAttribute('data-match-index')).toBe('1');

@@ -1,5 +1,7 @@
 import { SearchMatch, SearchOptions } from './types';
 
+const BLOCK_ELEMENTS = new Set(['P', 'DIV', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6']);
+
 /**
  * Escapes special regex characters in a query string.
  */
@@ -42,6 +44,20 @@ export function isIgnoredElement(el: Element): boolean {
 }
 
 /**
+ * Returns the nearest block-level ancestor (p, div, li, h1-h6) within root, or null.
+ */
+function getNearestBlockAncestor(node: Node, root: HTMLElement): Element | null {
+  let current = node.parentElement;
+  while (current && current !== root) {
+    if (BLOCK_ELEMENTS.has(current.tagName.toUpperCase())) {
+      return current;
+    }
+    current = current.parentElement;
+  }
+  return root;
+}
+
+/**
  * Collects all searchable Text nodes from a root element, skipping ignored subtrees.
  */
 export function collectSearchableTextNodes(root: HTMLElement): Text[] {
@@ -65,12 +81,8 @@ export function collectSearchableTextNodes(root: HTMLElement): Text[] {
             return NodeFilter.FILTER_REJECT;
           }
           const content = node.textContent;
-          if (!content || content.trim().length === 0) {
-            // Keep text nodes with whitespace if they could have matching content,
-            // but empty string nodes can be skipped
-            if (!content || content.length === 0) {
-              return NodeFilter.FILTER_SKIP;
-            }
+          if (!content || content.length === 0) {
+            return NodeFilter.FILTER_SKIP;
           }
           return NodeFilter.FILTER_ACCEPT;
         }
@@ -98,9 +110,48 @@ export interface TextNodeEntry {
 }
 
 /**
+ * Binary search for the TextNodeEntry containing a character offset.
+ * When `isEnd` is false, matches `offset >= entry.start && offset < entry.end`.
+ * When `isEnd` is true, matches `offset > entry.start && offset <= entry.end`.
+ */
+function findEntryByOffset(
+  entries: TextNodeEntry[],
+  offset: number,
+  isEnd: boolean
+): TextNodeEntry | undefined {
+  let lo = 0;
+  let hi = entries.length - 1;
+
+  while (lo <= hi) {
+    const mid = (lo + hi) >>> 1;
+    const entry = entries[mid];
+
+    if (isEnd) {
+      if (offset <= entry.start) {
+        hi = mid - 1;
+      } else if (offset > entry.end) {
+        lo = mid + 1;
+      } else {
+        return entry;
+      }
+    } else {
+      if (offset < entry.start) {
+        hi = mid - 1;
+      } else if (offset >= entry.end) {
+        lo = mid + 1;
+      } else {
+        return entry;
+      }
+    }
+  }
+
+  return undefined;
+}
+
+/**
  * Searches the DOM tree within root for occurrences of the query string.
- * Builds a single concatenated text string with a node-offset map so searches
- * can span across multiple DOM text nodes seamlessly.
+ * Builds a single concatenated text string with block-level '\n' sentinels
+ * and a node-offset map so searches can span inline tags without crossing blocks.
  * Returns an array of SearchMatch objects with character offsets.
  */
 export function findMatches(
@@ -124,10 +175,18 @@ export function findMatches(
   const entries: TextNodeEntry[] = [];
   let fullText = '';
   let cumulativeLength = 0;
+  let prevBlock: Element | null = null;
 
   for (const node of textNodes) {
     const text = node.textContent || '';
     if (text.length === 0) continue;
+
+    const currentBlock = getNearestBlockAncestor(node, root);
+    if (prevBlock !== null && currentBlock !== prevBlock && !fullText.endsWith('\n')) {
+      fullText += '\n';
+      cumulativeLength += 1;
+    }
+    prevBlock = currentBlock;
 
     const start = cumulativeLength;
     const end = start + text.length;
@@ -154,8 +213,8 @@ export function findMatches(
     const matchEnd = matchIndex + matchLength;
     const matchText = match[0];
 
-    const startEntry = entries.find((e) => matchIndex >= e.start && matchIndex < e.end);
-    const endEntry = entries.find((e) => matchEnd > e.start && matchEnd <= e.end);
+    const startEntry = findEntryByOffset(entries, matchIndex, false);
+    const endEntry = findEntryByOffset(entries, matchEnd, true);
 
     if (startEntry && endEntry) {
       const startOffset = matchIndex - startEntry.start;

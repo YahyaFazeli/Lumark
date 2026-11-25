@@ -250,12 +250,10 @@ Another search keyword appears here.
     expect(marks.length).toBeGreaterThan(0);
     const firstMark = marks[0];
     expect(firstMark.textContent).toBe('س');
-    // For Persian/Arabic characters, no dir attribute is set, but unicodeBidi is isolated
+    // Mark stays bidi-transparent: no dir="ltr" or inline bidi/layout overrides
     expect(firstMark.getAttribute('dir')).toBeNull();
-    expect(firstMark.style.unicodeBidi).toBe('isolate');
-    expect(firstMark.style.display).toBe('inline');
-    expect(firstMark.style.padding).toBe('0px');
-    expect(firstMark.style.margin).toBe('0px');
+    expect(firstMark.style.unicodeBidi).toBe('');
+    expect(firstMark.style.direction).toBe('');
     expect(firstMark.nextSibling?.textContent).toContain('ند');
   });
 
@@ -284,9 +282,9 @@ Another search keyword appears here.
     expect(heading?.querySelectorAll('mark[data-search-match="true"]').length).toBe(1);
     const mark = heading?.querySelector<HTMLElement>('mark[data-search-match="true"]');
     expect(mark?.textContent).toBe('Mermaid');
-    expect(mark?.getAttribute('dir')).toBe('ltr');
-    expect(mark?.style.direction).toBe('ltr');
-    expect(mark?.style.unicodeBidi).toBe('isolate');
+    expect(mark?.getAttribute('dir')).toBeNull();
+    expect(mark?.style.direction).toBe('');
+    expect(mark?.style.unicodeBidi).toBe('');
     // Logical text order is preserved: preceding Persian substring then the match.
     expect(heading?.textContent).toContain('نمودار فلوچارت (Mermaid Diagram)');
     expect(mark?.previousSibling?.textContent?.endsWith('(')).toBe(true);
