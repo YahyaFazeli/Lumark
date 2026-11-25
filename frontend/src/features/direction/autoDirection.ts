@@ -41,6 +41,28 @@ export const ARABIC_PERSIAN_UNICODE_REGEX =
 
 export const LTR_LATIN_ALPHABET_REGEX = /[a-zA-Z]/g;
 
+export const STRUCTURAL_BLOCK_TAGS = new Set([
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'heading',
+  'li',
+  'list-item',
+  'td',
+  'th',
+  'cell',
+  'table-cell',
+]);
+
+export const LIST_CONTAINER_TAGS = new Set([
+  'ul',
+  'ol',
+  'list',
+]);
+
 export const HEADING_TAGS = new Set([
   'h1',
   'h2',
@@ -123,12 +145,47 @@ export function getTextDirection(
   const ltrChars = (cleanText.match(LTR_LATIN_ALPHABET_REGEX) || []).length;
   const normalizedTag = (tag || '').toLowerCase().trim();
 
-  // 1. Headings (<h1> through <h6>)
-  // In an RTL document, headings belong to the document context and align RTL (e.g. "Local Admin")
-  if (HEADING_TAGS.has(normalizedTag)) {
+  // 1. List Containers (ul, ol)
+  if (LIST_CONTAINER_TAGS.has(normalizedTag)) {
     if (docDefaultDir === 'rtl') {
+      // If list contains ANY Persian/Arabic characters, set to 'rtl'
+      if (rtlChars > 0) {
+        return 'rtl';
+      }
+      // If 100% English (no Persian characters), set to 'ltr'
+      if (ltrChars > 0) {
+        return 'ltr';
+      }
+      return docDefaultDir;
+    } else {
+      if (rtlChars > ltrChars || (rtlChars > 0 && ltrChars === 0)) {
+        return 'rtl';
+      }
+      if (ltrChars > 0) {
+        return 'ltr';
+      }
+      return docDefaultDir;
+    }
+  }
+
+  // 2. Structural Blocks in RTL Documents (headings h1-h6, list items li, table cells td/th)
+  // If the block contains Persian/Arabic characters: dir is 'rtl'.
+  // If the block is purely English (or mostly English): dir is 'ltr'.
+  // Setting dir="ltr" on English structural blocks inside RTL documents forces the browser
+  // to render characters and numbers (e.g. "Phase 1", "Phase 2") in correct LTR sequence,
+  // preventing numbers from jumping/overlapping, while applyDominanceDirection right-aligns them.
+  if (docDefaultDir === 'rtl' && STRUCTURAL_BLOCK_TAGS.has(normalizedTag)) {
+    if (rtlChars > 0) {
       return 'rtl';
     }
+    if (ltrChars > 0) {
+      return 'ltr';
+    }
+    return docDefaultDir;
+  }
+
+  // 3. Headings in LTR Documents
+  if (HEADING_TAGS.has(normalizedTag)) {
     // In an LTR document:
     // If Persian dominates (e.g. "عنوان اصلی با Docker"): align RTL
     if (rtlChars > ltrChars) {
@@ -140,34 +197,21 @@ export function getTextDirection(
     return docDefaultDir;
   }
 
-  // 2. Short Blocks (<li>, <td>, <th>)
+  // 4. Short Blocks in LTR Documents (<li>, <td>, <th>)
   if (SHORT_BLOCK_TAGS.has(normalizedTag)) {
-    if (docDefaultDir === 'rtl') {
-      // If docDefaultDir === 'rtl' and text contains at least one Persian/Arabic character, force 'rtl'
-      if (rtlChars > 0) {
-        return 'rtl';
-      }
-      // If docDefaultDir === 'rtl' and text is purely English (no Persian), keep it 'ltr'
-      if (ltrChars > 0 && rtlChars === 0) {
-        return 'ltr';
-      }
-      // Neither (e.g., numbers only "12345", emojis, symbols): fallback to docDefaultDir ('rtl')
-      return docDefaultDir;
-    } else {
-      // If docDefaultDir === 'ltr' and text contains at least one Latin character, force 'ltr'
-      if (ltrChars > 0) {
-        return 'ltr';
-      }
-      // If docDefaultDir === 'ltr' and text is purely Persian, keep it 'rtl'
-      if (rtlChars > 0 && ltrChars === 0) {
-        return 'rtl';
-      }
-      // Neither: fallback to docDefaultDir ('ltr')
-      return docDefaultDir;
+    // If docDefaultDir === 'ltr' and text contains at least one Latin character, force 'ltr'
+    if (ltrChars > 0) {
+      return 'ltr';
     }
+    // If docDefaultDir === 'ltr' and text is purely Persian, keep it 'rtl'
+    if (rtlChars > 0 && ltrChars === 0) {
+      return 'rtl';
+    }
+    // Neither: fallback to docDefaultDir ('ltr')
+    return docDefaultDir;
   }
 
-  // 3. Long Blocks (<p>, <blockquote>) & Default Majority-Character-Count Logic
+  // 4. Long Blocks (<p>, <blockquote>) & Default Majority-Character-Count Logic
   // For long blocks (<p>, <blockquote>): Keep the majority-character-count logic
   if (rtlChars > ltrChars) {
     return 'rtl';
@@ -207,11 +251,41 @@ function getBlockProseText(element: HTMLElement): string {
 }
 
 /**
+ * Extracts prose text from a list element (<ul> or <ol>) by combining the text of its
+ * direct <li> children, while ignoring nested lists (<ol>, <ul>) and code (<pre>, <code>).
+ */
+export function getListProseText(listEl: HTMLElement): string {
+  const directLis = Array.from(listEl.children).filter(
+    (child): child is HTMLElement => child.tagName.toLowerCase() === 'li'
+  );
+  const targetLis = directLis.length > 0 ? directLis : Array.from(listEl.querySelectorAll('li'));
+
+  if (targetLis.length === 0) {
+    return getBlockProseText(listEl);
+  }
+
+  return targetLis
+    .map((li) => {
+      const clone = li.cloneNode(true) as HTMLElement;
+      clone.querySelectorAll('ul, ol, pre, code').forEach((node) => node.remove());
+      return clone.textContent || '';
+    })
+    .join(' ');
+}
+
+/**
  * Applies dominance-based text direction and alignment to block-level elements in a container.
  *
- * Evaluated block elements: <p>, <h1> through <h6>, <li>, <blockquote>, <td>, <th>.
+ * Evaluated block elements: <p>, <h1> through <h6>, <ul>, <ol>, <li>, <blockquote>, <td>, <th>.
  * Strictly ignores <code>, <pre>, and elements inside code/pre blocks (code blocks remain LTR).
  * Inline elements (<strong>, <em>, <span>) are not targeted.
+ *
+ * In RTL documents:
+ * - List containers (<ul>, <ol>) are evaluated as a unit:
+ *   - If the list contains any Persian/Arabic characters, set to dir="rtl" and style.textAlign="right".
+ *   - If 100% English (no Persian characters), set to dir="ltr" and style.textAlign="left".
+ * - Individual <li> elements inside <ul>/<ol> in RTL documents are not assigned dir="ltr",
+ *   allowing them to inherit direction and alignment from the parent list container (preserving correct bullet position).
  *
  * @param container The container DOM element containing rendered Markdown.
  * @param docDefaultDir The document's default direction ('rtl' | 'ltr').
@@ -220,7 +294,7 @@ export function applyDominanceDirection(
   container: HTMLElement,
   docDefaultDir: Direction = 'ltr'
 ): void {
-  const blockSelector = 'p, h1, h2, h3, h4, h5, h6, li, blockquote, td, th';
+  const blockSelector = 'p, h1, h2, h3, h4, h5, h6, ul, ol, li, blockquote, td, th';
   const blockElements = container.querySelectorAll<HTMLElement>(blockSelector);
 
   blockElements.forEach((el) => {
@@ -230,10 +304,56 @@ export function applyDominanceDirection(
       return;
     }
 
+    // 1. List container elements (<ul>, <ol>)
+    if (tag === 'ul' || tag === 'ol') {
+      if (docDefaultDir === 'rtl') {
+        const listText = getListProseText(el);
+        const rtlChars = (listText.match(ARABIC_PERSIAN_UNICODE_REGEX) || []).length;
+        const ltrChars = (listText.match(LTR_LATIN_ALPHABET_REGEX) || []).length;
+
+        if (rtlChars > 0) {
+          // If the list contains ANY Persian/Arabic characters, set to 'rtl' and 'right'
+          // (forces browser to place bullets/numbers on the right side)
+          el.setAttribute('dir', 'rtl');
+          el.style.textAlign = 'right';
+        } else if (ltrChars > 0) {
+          // If 100% English (no Persian characters), set to 'ltr' and 'left'
+          // (individual <li> inherit this and correctly display bullets/numbers on the left side)
+          el.setAttribute('dir', 'ltr');
+          el.style.textAlign = 'left';
+        } else {
+          // Fallback to document default direction
+          el.setAttribute('dir', docDefaultDir);
+          el.style.textAlign = 'right';
+        }
+      }
+      return;
+    }
+
+    // 2. List item elements (<li>)
+    // If inside an RTL document and has a parent <ul> or <ol>, skip setting direction
+    // directly on <li> so it inherits direction and alignment from the list container.
+    // This stops applying dir="ltr" directly to <li> and keeps list markers (bullets) on the right
+    // for mixed/Persian lists, and on the left for pure English lists.
+    if (tag === 'li' && docDefaultDir === 'rtl' && el.closest('ul, ol')) {
+      el.removeAttribute('dir');
+      el.style.textAlign = '';
+      return;
+    }
+
+    // 3. Other block elements (p, h1-h6, blockquote, td, th, and standalone li)
     const text = getBlockProseText(el);
     const dir = getTextDirection(text, docDefaultDir, tag);
     el.setAttribute('dir', dir);
-    el.style.textAlign = dir === 'rtl' ? 'right' : 'left';
+
+    // If docDefaultDir === 'rtl', ALL structural blocks (h1-h6, td, th, standalone li)
+    // MUST have style.textAlign = 'right', regardless of their text content (even if dir="ltr").
+    // For non-structural blocks (e.g. p, blockquote), align according to computed dir.
+    if (docDefaultDir === 'rtl' && STRUCTURAL_BLOCK_TAGS.has(tag)) {
+      el.style.textAlign = 'right';
+    } else {
+      el.style.textAlign = dir === 'rtl' ? 'right' : 'left';
+    }
   });
 }
 
