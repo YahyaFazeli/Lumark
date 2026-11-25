@@ -327,8 +327,15 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
 
   const isTocOpen = userWantsToc && !isNarrowScreen;
 
+  const docDir = React.useMemo(() => {
+    if (activePref === 'rtl' || activePref === 'ltr') {
+      return activePref;
+    }
+    return detectFirstStrongDirection(rawMarkdown, { fallback: 'ltr' }) ?? 'ltr';
+  }, [activePref, rawMarkdown]);
+
   const contentRef = React.useRef<HTMLElement | null>(null);
-  const search = useSearch({ containerRef: contentRef });
+  const search = useSearch({ containerRef: contentRef, docDir });
   useSelectionCopy({ containerRef: contentRef });
 
   React.useEffect(() => {
@@ -382,13 +389,6 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
   const slugTracker = React.useMemo(() => new SlugTracker(), [content]);
 
   const viewportRef = React.useRef<HTMLDivElement | null>(null);
-
-  const docDir = React.useMemo(() => {
-    if (activePref === 'rtl' || activePref === 'ltr') {
-      return activePref;
-    }
-    return detectFirstStrongDirection(rawMarkdown, { fallback: 'ltr' }) ?? 'ltr';
-  }, [activePref, rawMarkdown]);
 
   const resolvedTocPosition: 'left' | 'right' = React.useMemo(() => {
     const pos = settings.tocPosition ?? 'auto';
@@ -539,6 +539,8 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
             onClose={search.closeSearch}
             caseSensitive={search.caseSensitive}
             onToggleCaseSensitive={search.toggleCaseSensitive}
+            dir={docDir}
+            docDir={docDir}
           />
         </div>
       )}

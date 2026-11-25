@@ -393,4 +393,75 @@ Another search keyword appears here.
     fireEvent.click(tocToggle);
     expect(searchBar).toHaveClass('has-toc-open');
   });
+
+  it('Dynamic Direction: dynamically adapts search bar to RTL when viewing a Persian document', () => {
+    const persianDocument = `
+# مستند راهنمای ناوبری و جستجو
+این یک سند آزمایشی به زبان فارسی است.
+کاربر می‌تواند کلمات فارسی و همچنین کلمات انگلیسی مانند React را جستجو کند.
+`;
+
+    render(
+      <MarkdownViewer
+        document={{
+          filename: 'persian-guide.md',
+          filePath: '/docs/persian-guide.md',
+          content: persianDocument,
+        }}
+      />
+    );
+
+    // Open search bar
+    fireEvent.click(screen.getByTestId('doc-search-toggle'));
+
+    const searchBar = screen.getByTestId('search-bar');
+    const input = screen.getByTestId('search-input') as HTMLInputElement;
+
+    // Search bar container should have .is-rtl class, dir="rtl", and row-reverse flex direction
+    expect(searchBar).toHaveClass('is-rtl');
+    expect(searchBar).toHaveAttribute('dir', 'rtl');
+    expect(searchBar.style.flexDirection).toBe('row-reverse');
+
+    // Input field should have dir="rtl"
+    expect(input).toHaveAttribute('dir', 'rtl');
+
+    // Search icon and close button exist
+    expect(screen.getByTestId('search-icon')).toBeInTheDocument();
+    expect(screen.getByTestId('search-close-btn')).toBeInTheDocument();
+
+    // Type Persian text into input
+    act(() => {
+      fireEvent.change(input, { target: { value: 'فارسی' } });
+    });
+    expect(input.value).toBe('فارسی');
+
+    // Type English text into input - should not reverse characters
+    act(() => {
+      fireEvent.change(input, { target: { value: 'React' } });
+    });
+    expect(input.value).toBe('React');
+    expect(input.value).not.toBe('tcaeR');
+  });
+
+  it('Dynamic Direction: keeps search bar in LTR mode when viewing an English document', () => {
+    render(
+      <MarkdownViewer
+        document={{
+          filename: 'english.md',
+          filePath: '/docs/english.md',
+          content: '# English Document\n\nThis is an English document.',
+        }}
+      />
+    );
+
+    // Open search bar
+    fireEvent.click(screen.getByTestId('doc-search-toggle'));
+
+    const searchBar = screen.getByTestId('search-bar');
+    const input = screen.getByTestId('search-input') as HTMLInputElement;
+
+    expect(searchBar).not.toHaveClass('is-rtl');
+    expect(searchBar).toHaveAttribute('dir', 'ltr');
+    expect(input).toHaveAttribute('dir', 'ltr');
+  });
 });

@@ -7,6 +7,7 @@ export interface UseSearchOptions {
   containerRef: React.RefObject<HTMLElement | null>;
   initialOpen?: boolean;
   debounceMs?: number;
+  docDir?: 'ltr' | 'rtl';
 }
 
 export interface UseSearchResult {
@@ -22,12 +23,14 @@ export interface UseSearchResult {
   nextMatch: () => void;
   prevMatch: () => void;
   toggleCaseSensitive: () => void;
+  docDir?: 'ltr' | 'rtl';
 }
 
 export function useSearch({
   containerRef,
   initialOpen = false,
   debounceMs = 0,
+  docDir = 'ltr',
 }: UseSearchOptions): UseSearchResult {
   const [isOpen, setIsOpen] = useState<boolean>(initialOpen);
   const [query, setQueryState] = useState<string>('');
@@ -141,5 +144,6 @@ export function useSearch({
     nextMatch,
     prevMatch,
     toggleCaseSensitive,
+    docDir,
   };
 }

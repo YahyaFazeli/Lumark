@@ -326,5 +326,156 @@ describe('Search Indexer Unit Tests (US-022.1)', () => {
       fireEvent.click(toggleBtn);
       expect(onToggleCase).toHaveBeenCalledTimes(1);
     });
+
+    it('applies dynamic RTL layout and dir="rtl" to input and container when dir="rtl"', () => {
+      const { rerender } = render(
+        <SearchBar
+          isOpen={true}
+          query=""
+          onQueryChange={vi.fn()}
+          currentIndex={0}
+          totalMatches={0}
+          onNext={vi.fn()}
+          onPrevious={vi.fn()}
+          onClose={vi.fn()}
+          dir="rtl"
+        />
+      );
+
+      const searchBar = screen.getByTestId('search-bar');
+      const input = screen.getByTestId('search-input');
+      const searchIcon = screen.getByTestId('search-icon');
+      const closeBtn = screen.getByTestId('search-close-btn');
+
+      // Verify container has .is-rtl, dir="rtl", and flex-direction: row-reverse
+      expect(searchBar).toHaveClass('is-rtl');
+      expect(searchBar).toHaveAttribute('dir', 'rtl');
+      expect(searchBar.style.flexDirection).toBe('row-reverse');
+
+      // Verify input has dir="rtl"
+      expect(input).toHaveAttribute('dir', 'rtl');
+
+      // Verify icons exist
+      expect(searchIcon).toBeInTheDocument();
+      expect(closeBtn).toBeInTheDocument();
+
+      // Test docDir prop variant
+      rerender(
+        <SearchBar
+          isOpen={true}
+          query=""
+          onQueryChange={vi.fn()}
+          currentIndex={0}
+          totalMatches={0}
+          onNext={vi.fn()}
+          onPrevious={vi.fn()}
+          onClose={vi.fn()}
+          docDir="rtl"
+        />
+      );
+
+      expect(screen.getByTestId('search-bar')).toHaveClass('is-rtl');
+      expect(screen.getByTestId('search-input')).toHaveAttribute('dir', 'rtl');
+
+      // Rerender as LTR
+      rerender(
+        <SearchBar
+          isOpen={true}
+          query=""
+          onQueryChange={vi.fn()}
+          currentIndex={0}
+          totalMatches={0}
+          onNext={vi.fn()}
+          onPrevious={vi.fn()}
+          onClose={vi.fn()}
+          dir="ltr"
+        />
+      );
+
+      expect(screen.getByTestId('search-bar')).not.toHaveClass('is-rtl');
+      expect(screen.getByTestId('search-bar')).toHaveAttribute('dir', 'ltr');
+      expect(screen.getByTestId('search-input')).toHaveAttribute('dir', 'ltr');
+    });
+
+    it('ensures text inside RTL search bar preserves correct order and does not reverse Latin characters', () => {
+      let currentQuery = '';
+      const onQueryChange = vi.fn((q: string) => {
+        currentQuery = q;
+      });
+
+      const { rerender } = render(
+        <SearchBar
+          isOpen={true}
+          query={currentQuery}
+          onQueryChange={onQueryChange}
+          currentIndex={0}
+          totalMatches={0}
+          onNext={vi.fn()}
+          onPrevious={vi.fn()}
+          onClose={vi.fn()}
+          dir="rtl"
+        />
+      );
+
+      const input = screen.getByTestId('search-input') as HTMLInputElement;
+
+      // 1. Typing Persian text
+      fireEvent.change(input, { target: { value: 'جستجو' } });
+      expect(onQueryChange).toHaveBeenLastCalledWith('جستجو');
+
+      rerender(
+        <SearchBar
+          isOpen={true}
+          query="جستجو"
+          onQueryChange={onQueryChange}
+          currentIndex={0}
+          totalMatches={1}
+          onNext={vi.fn()}
+          onPrevious={vi.fn()}
+          onClose={vi.fn()}
+          dir="rtl"
+        />
+      );
+      expect(input.value).toBe('جستجو');
+
+      // 2. Typing English/Latin characters into RTL input - must NOT be reversed
+      fireEvent.change(input, { target: { value: 'search' } });
+      expect(onQueryChange).toHaveBeenLastCalledWith('search');
+
+      rerender(
+        <SearchBar
+          isOpen={true}
+          query="search"
+          onQueryChange={onQueryChange}
+          currentIndex={0}
+          totalMatches={1}
+          onNext={vi.fn()}
+          onPrevious={vi.fn()}
+          onClose={vi.fn()}
+          dir="rtl"
+        />
+      );
+      expect(input.value).toBe('search');
+      expect(input.value).not.toBe('hcraes');
+
+      // 3. Mixed Persian and English text
+      fireEvent.change(input, { target: { value: 'متن test نمونه' } });
+      expect(onQueryChange).toHaveBeenLastCalledWith('متن test نمونه');
+
+      rerender(
+        <SearchBar
+          isOpen={true}
+          query="متن test نمونه"
+          onQueryChange={onQueryChange}
+          currentIndex={0}
+          totalMatches={1}
+          onNext={vi.fn()}
+          onPrevious={vi.fn()}
+          onClose={vi.fn()}
+          dir="rtl"
+        />
+      );
+      expect(input.value).toBe('متن test نمونه');
+    });
   });
 });

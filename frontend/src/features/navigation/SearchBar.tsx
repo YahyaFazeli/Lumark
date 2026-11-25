@@ -14,6 +14,8 @@ export interface SearchBarProps {
   caseSensitive?: boolean;
   onToggleCaseSensitive?: () => void;
   className?: string;
+  dir?: 'ltr' | 'rtl';
+  docDir?: 'ltr' | 'rtl';
 }
 
 export const SearchBar: React.FC<SearchBarProps> = ({
@@ -28,8 +30,12 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   caseSensitive = false,
   onToggleCaseSensitive,
   className = '',
+  dir,
+  docDir: docDirProp,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
+  const docDir = dir ?? docDirProp ?? 'ltr';
+  const isRtl = docDir === 'rtl';
 
   useEffect(() => {
     if (isOpen && inputRef.current) {
@@ -72,15 +78,24 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
   return (
     <div
-      className={`search-bar-floating app-chrome ${className}`.trim()}
+      className={`search-bar-floating app-chrome ${isRtl ? 'is-rtl' : ''} ${className}`.trim()}
       role="search"
       aria-label="Find in document"
       data-testid="search-bar"
+      dir={docDir}
+      style={isRtl ? { flexDirection: 'row-reverse' } : undefined}
     >
-      <div className="search-bar-input-wrapper">
+      <div
+        className="search-bar-input-wrapper"
+        style={isRtl ? { flexDirection: 'row-reverse' } : undefined}
+      >
+        <span className="search-bar-search-icon" data-testid="search-icon" aria-hidden="true">
+          <Icon name="search" size={14} strokeWidth={2} />
+        </span>
         <input
           ref={inputRef}
           type="text"
+          dir={docDir}
           className="search-bar-input"
           placeholder="Find in document..."
           value={query}
@@ -101,7 +116,10 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         )}
       </div>
 
-      <div className="search-bar-controls">
+      <div
+        className="search-bar-controls"
+        style={isRtl ? { flexDirection: 'row-reverse' } : undefined}
+      >
         {onToggleCaseSensitive && (
           <button
             type="button"
