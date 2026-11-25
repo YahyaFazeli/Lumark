@@ -103,7 +103,7 @@ describe('Cross-Node Search & Multi-Element Highlighting', () => {
       expect(marks1.length).toBeGreaterThan(0);
       expect(container.textContent).toBe(originalText);
       expect(marks1[0].classList.contains('active')).toBe(true);
-      expect(marks1[0].classList.contains('search-highlight')).toBe(true);
+      expect(marks1[0].classList.contains('search-match')).toBe(true);
 
       // Clear highlights
       clearHighlights(container);
@@ -224,7 +224,6 @@ describe('Cross-Node Search & Multi-Element Highlighting', () => {
 
       // Assert CSS classes and active state
       expect(mark.classList.contains('search-match')).toBe(true);
-      expect(mark.classList.contains('search-highlight')).toBe(true);
       expect(mark.classList.contains('active')).toBe(true);
 
       // Assert inline CSS properties
@@ -241,6 +240,117 @@ describe('Cross-Node Search & Multi-Element Highlighting', () => {
       clearHighlights(container);
       expect(container.querySelectorAll('mark')).toHaveLength(0);
       expect(container.innerHTML).toBe(originalHTML);
+    });
+
+    it('accurately calculates offsets and highlights English word in Persian sentence without splitting or reversing', () => {
+      container.innerHTML = '<p dir="rtl">تغییرات مستقیما روی شاخه main میشوند.</p>';
+      const p = container.querySelector('p')!;
+
+      const matches = findMatches(container, 'main');
+      expect(matches).toHaveLength(1);
+      const match = matches[0];
+
+      // Console log startOffset and endOffset as requested
+      console.log(`[search] match "${match.text}": startOffset=${match.startOffset}, endOffset=${match.endOffset}`);
+
+      // Offset calculation assertions: "تغییرات مستقیما روی شاخه " is 25 chars
+      expect(match.startOffset).toBe(25);
+      expect(match.endOffset).toBe(29);
+      expect(match.text).toBe('main');
+
+      // Highlight with activeIndex = 0
+      applyHighlights(container, matches, 0);
+
+      const marks = container.querySelectorAll<HTMLElement>('mark.search-match');
+      expect(marks).toHaveLength(1);
+      const mark = marks[0];
+
+      // Assert that the text inside <mark> is exactly "main"
+      expect(mark.textContent).toBe('main');
+      expect(mark.childNodes.length).toBe(1);
+      expect(mark.childNodes[0].nodeType).toBe(Node.TEXT_NODE);
+      expect(mark.childNodes[0].nodeValue).toBe('main');
+
+      // Assert that mark.getAttribute('dir') === 'ltr'
+      expect(mark.getAttribute('dir')).toBe('ltr');
+
+      // Assert that mark.style.direction === 'ltr'
+      expect(mark.style.direction).toBe('ltr');
+      expect(mark.style.unicodeBidi).toBe('isolate');
+
+      // Assert that the DOM is EXACTLY:
+      // <p dir="rtl">تغییرات مستقیما روی شاخه <mark class="search-match..." dir="ltr">main</mark> میشوند.</p>
+      // (Notice the space before and after the mark).
+      expect(p.childNodes.length).toBe(3);
+      expect(p.childNodes[0].nodeType).toBe(Node.TEXT_NODE);
+      expect(p.childNodes[0].nodeValue).toBe('تغییرات مستقیما روی شاخه ');
+      expect(p.childNodes[1]).toBe(mark);
+      expect(p.childNodes[2].nodeType).toBe(Node.TEXT_NODE);
+      expect(p.childNodes[2].nodeValue).toBe(' میشوند.');
+
+      // Assert that the text node "شاخه " is untouched
+      expect(p.childNodes[0].nodeValue?.endsWith('شاخه ')).toBe(true);
+      expect(mark.previousSibling?.textContent).toBe('تغییرات مستقیما روی شاخه ');
+      expect(mark.nextSibling?.textContent).toBe(' میشوند.');
+
+      // Clear highlights and verify clean restoration
+      clearHighlights(container);
+      expect(container.querySelectorAll('mark')).toHaveLength(0);
+      expect(container.innerHTML).toBe('<p dir="rtl">تغییرات مستقیما روی شاخه main میشوند.</p>');
+    });
+
+    it('calculates correct startOffset and endOffset for "شاخه main "', () => {
+      container.innerHTML = '<p>شاخه main </p>';
+      const matches = findMatches(container, 'main');
+      expect(matches).toHaveLength(1);
+      console.log(`[search] match "${matches[0].text}": startOffset=${matches[0].startOffset}, endOffset=${matches[0].endOffset}`);
+      // Index of 'm' in "شاخه main " is 5
+      expect(matches[0].startOffset).toBe(5);
+      expect(matches[0].endOffset).toBe(9);
+      expect(matches[0].text).toBe('main');
+    });
+
+    it('accurately highlights "mai" in "<p dir=\"rtl\">تغییرات روی شاخه main میشوند</p>" leaving text outside mark untouched', () => {
+      const testContainer = document.createElement('div');
+      testContainer.innerHTML = `<p dir="rtl">تغییرات روی شاخه main میشوند</p>`;
+      const p = testContainer.querySelector('p')!;
+
+      // search for "mai"
+      const matches = findMatches(testContainer, 'mai');
+      expect(matches).toHaveLength(1);
+      const match = matches[0];
+
+      // Exact offset math: "تغییرات روی شاخه " has length 17
+      expect(match.startOffset).toBe(17);
+      expect(match.endOffset).toBe(20);
+      expect(match.text).toBe('mai');
+
+      applyHighlights(testContainer, matches, 0);
+
+      const mark = p.querySelector('mark')!;
+      expect(mark).toBeDefined();
+
+      // assert that the DOM is EXACTLY:
+      // <p dir="rtl">تغییرات روی شاخه <mark class="search-match" dir="ltr">mai</mark>n میشوند</p>
+      expect(p.childNodes.length).toBe(3);
+      expect(p.childNodes[0].nodeType).toBe(Node.TEXT_NODE);
+      expect(p.childNodes[0].nodeValue).toBe('تغییرات روی شاخه ');
+      expect(p.childNodes[1]).toBe(mark);
+      expect(mark.tagName).toBe('MARK');
+      expect(mark.classList.contains('search-match')).toBe(true);
+      expect(mark.getAttribute('dir')).toBe('ltr');
+      expect(mark.textContent).toBe('mai');
+      expect(p.childNodes[2].nodeType).toBe(Node.TEXT_NODE);
+      expect(p.childNodes[2].nodeValue).toBe('n میشوند');
+
+      // The text outside the <mark> must remain untouched
+      expect(mark.previousSibling?.textContent).toBe('تغییرات روی شاخه ');
+      expect(mark.nextSibling?.textContent).toBe('n میشوند');
+      expect(testContainer.textContent).toBe('تغییرات روی شاخه main میشوند');
+
+      clearHighlights(testContainer);
+      expect(testContainer.querySelectorAll('mark')).toHaveLength(0);
+      expect(testContainer.innerHTML).toBe('<p dir="rtl">تغییرات روی شاخه main میشوند</p>');
     });
 
     it('normalizes and highlights English word when text node was previously split in RTL paragraph', () => {

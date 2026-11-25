@@ -179,12 +179,12 @@ export function applyHighlights(
       range.setStart(startNode, match.startOffset);
       range.setEnd(endNode, match.endOffset);
 
-      const frag = range.extractContents();
+      const fragment = range.extractContents();
 
       // Unwrap any pre-existing or nested mark tags inside the extracted fragment
       // so a match is NEVER broken into multiple nested or split mark elements
-      if (typeof frag.querySelectorAll === 'function') {
-        const existingMarks = frag.querySelectorAll('mark');
+      if (typeof fragment.querySelectorAll === 'function') {
+        const existingMarks = fragment.querySelectorAll('mark');
         existingMarks.forEach((m) => {
           const parent = m.parentNode;
           if (parent) {
@@ -197,14 +197,12 @@ export function applyHighlights(
       }
 
       const mark = document.createElement('mark');
-      mark.className = 'search-match search-highlight';
+      mark.className = 'search-match';
       mark.setAttribute('data-search-match', 'true');
       mark.setAttribute('data-match-index', String(match.index));
 
-      // For purely LTR (English) matches, explicitly enforce dir="ltr" and direction: ltr.
-      // Crucial: do NOT use direction: inherit for LTR matches inside an RTL paragraph,
-      // as inheriting RTL causes the browser to reverse English letters.
-      if (isPureLtr(match.text)) {
+      const isLtrText = isPureLtr(match.text);
+      if (isLtrText) {
         mark.setAttribute('dir', 'ltr');
         mark.style.direction = 'ltr';
       }
@@ -214,41 +212,18 @@ export function applyHighlights(
       mark.style.padding = '0';
       mark.style.margin = '0';
 
-      if (match.index === activeIndex) {
+      if (activeIndex >= 0 && match.index === activeIndex) {
         mark.classList.add('active');
         mark.setAttribute('data-search-active', 'true');
       }
 
-      mark.appendChild(frag);
-
-      // Unwrap any nested mark tags inside the new mark
-      const nestedMarks = mark.querySelectorAll('mark');
-      nestedMarks.forEach((nested) => {
-        const parent = nested.parentNode;
-        if (parent) {
-          while (nested.firstChild) {
-            parent.insertBefore(nested.firstChild, nested);
-          }
-          parent.removeChild(nested);
-        }
-      });
-
-      // Merge adjacent identical inline tags and normalize text nodes inside the mark
-      // to ensure the browser doesn't render the word as separate pieces
-      mergeAdjacentIdenticalElements(mark);
-      if (typeof mark.normalize === 'function') {
-        mark.normalize();
-      }
+      mark.appendChild(fragment);
 
       range.insertNode(mark);
 
-      // After inserting the mark into the DOM, normalize both the mark and its parent element
-      // to ensure all text nodes are cleanly merged into single string runs
+      // After inserting, run mark.normalize() to ensure the text inside the mark is a single text node
       if (typeof mark.normalize === 'function') {
         mark.normalize();
-      }
-      if (mark.parentElement && typeof mark.parentElement.normalize === 'function') {
-        mark.parentElement.normalize();
       }
 
       markElements.push(mark);

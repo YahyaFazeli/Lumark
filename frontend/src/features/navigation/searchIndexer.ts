@@ -93,47 +93,8 @@ export function collectSearchableTextNodes(root: HTMLElement): Text[] {
 
 export interface TextNodeEntry {
   node: Text;
-  startIndex: number;
-  endIndex: number;
-}
-
-/**
- * Binary search helper to find the TextNodeEntry containing a character offset.
- */
-function findEntryForOffset(
-  nodeMap: TextNodeEntry[],
-  charIndex: number,
-  isEnd: boolean
-): TextNodeEntry | undefined {
-  let low = 0;
-  let high = nodeMap.length - 1;
-
-  while (low <= high) {
-    const mid = (low + high) >> 1;
-    const entry = nodeMap[mid];
-
-    if (isEnd) {
-      // Match ends at charIndex (exclusive): entry.startIndex < charIndex <= entry.endIndex
-      if (charIndex <= entry.startIndex) {
-        high = mid - 1;
-      } else if (charIndex > entry.endIndex) {
-        low = mid + 1;
-      } else {
-        return entry;
-      }
-    } else {
-      // Match starts at charIndex (inclusive): entry.startIndex <= charIndex < entry.endIndex
-      if (charIndex < entry.startIndex) {
-        high = mid - 1;
-      } else if (charIndex >= entry.endIndex) {
-        low = mid + 1;
-      } else {
-        return entry;
-      }
-    }
-  }
-
-  return undefined;
+  start: number;
+  end: number;
 }
 
 /**
@@ -160,25 +121,27 @@ export function findMatches(
     return [];
   }
 
-  const nodeMap: TextNodeEntry[] = [];
+  const entries: TextNodeEntry[] = [];
   let fullText = '';
+  let cumulativeLength = 0;
 
   for (const node of textNodes) {
     const text = node.textContent || '';
     if (text.length === 0) continue;
 
-    const startIndex = fullText.length;
+    const start = cumulativeLength;
+    const end = start + text.length;
     fullText += text;
-    const endIndex = fullText.length;
+    cumulativeLength = end;
 
-    nodeMap.push({
+    entries.push({
       node,
-      startIndex,
-      endIndex,
+      start,
+      end,
     });
   }
 
-  if (fullText.length === 0 || nodeMap.length === 0) {
+  if (fullText.length === 0 || entries.length === 0) {
     return [];
   }
 
@@ -186,17 +149,17 @@ export function findMatches(
   let match: RegExpExecArray | null;
 
   while ((match = regex.exec(fullText)) !== null) {
-    const matchStart = match.index;
+    const matchIndex = match.index;
     const matchLength = match[0].length;
-    const matchEnd = matchStart + matchLength;
+    const matchEnd = matchIndex + matchLength;
     const matchText = match[0];
 
-    const startEntry = findEntryForOffset(nodeMap, matchStart, false);
-    const endEntry = findEntryForOffset(nodeMap, matchEnd, true);
+    const startEntry = entries.find((e) => matchIndex >= e.start && matchIndex < e.end);
+    const endEntry = entries.find((e) => matchEnd > e.start && matchEnd <= e.end);
 
     if (startEntry && endEntry) {
-      const startOffset = matchStart - startEntry.startIndex;
-      const endOffset = matchEnd - endEntry.startIndex;
+      const startOffset = matchIndex - startEntry.start;
+      const endOffset = matchEnd - endEntry.start;
 
       matches.push({
         index: matches.length,
